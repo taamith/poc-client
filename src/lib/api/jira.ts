@@ -5,7 +5,8 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
-    withCredentials: true,
+    // Set to false for production CORS compatibility unless cookies are strictly required
+    withCredentials: false,
 });
 
 export const jiraApi = {
