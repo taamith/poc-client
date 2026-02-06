@@ -93,21 +93,43 @@ const IssueList: React.FC = observer(() => {
                                         }
                                     }}
                                 >
-                                    <ListItemText
-                                        primary={issue.summary}
-                                        secondary={issue.key}
-                                        primaryTypographyProps={{
-                                            variant: 'body2',
-                                            fontWeight: 600,
-                                            color: '#172B4D',
-                                            noWrap: true
-                                        }}
-                                        secondaryTypographyProps={{
-                                            variant: 'caption',
-                                            fontWeight: 700,
-                                            color: '#6B778C'
-                                        }}
-                                    />
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                                        <ListItemText
+                                            primary={issue.summary}
+                                            secondary={issue.key}
+                                            primaryTypographyProps={{
+                                                variant: 'body2',
+                                                fontWeight: 600,
+                                                color: '#172B4D',
+                                                noWrap: true
+                                            }}
+                                            secondaryTypographyProps={{
+                                                variant: 'caption',
+                                                fontWeight: 700,
+                                                color: '#6B778C'
+                                            }}
+                                        />
+                                        {/* Status indicator */}
+                                        {issue.test_cases_generated && issue.test_case_filename && (
+                                            <Box
+                                                sx={{
+                                                    mt: 0.5,
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    bgcolor: '#E3FCEF',
+                                                    color: '#006644',
+                                                    px: 1,
+                                                    py: 0.25,
+                                                    borderRadius: '3px',
+                                                    fontSize: '11px',
+                                                    fontWeight: 700,
+                                                    alignSelf: 'flex-start'
+                                                }}
+                                            >
+                                                ✓ Test Plan Ready
+                                            </Box>
+                                        )}
+                                    </Box>
                                 </ListItemButton>
                             </Box>
                         </ListItem>

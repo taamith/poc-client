@@ -5,6 +5,9 @@ import { toast } from 'sonner';
 export interface JiraIssue {
     key: string;
     summary: string;
+    test_case_filename?: string;
+    test_cases_generated?: boolean;
+    is_qa_approved?: boolean;
 }
 
 export interface IssueDetail extends JiraIssue {
@@ -15,6 +18,7 @@ class IssueStore {
     issues: JiraIssue[] = [];
     selectedIssueKeys: Set<string> = new Set();
     selectedIssue: IssueDetail | null = null;
+    issueDetailsCache: Map<string, IssueDetail> = new Map(); // Cache for issue details
     batchProcessingStatus: Map<string, 'pending' | 'processing' | 'completed' | 'failed'> = new Map();
     generatedPlans: Map<string, string> = new Map(); // key -> JSON string
     loading: boolean = false;
@@ -35,18 +39,35 @@ class IssueStore {
 
         try {
             const response = await jiraApi.fetchIssues();
+            console.log('🔍 Raw API Response:', response.data);
+
             // Handle the observed nested response structure: { issues: { issues: [...] } }
             const nestedIssues = response.data?.issues?.issues;
             const directIssues = response.data?.issues;
 
             runInAction(() => {
                 if (Array.isArray(nestedIssues)) {
+                    console.log('📦 Using nested issues structure');
+                    console.log('First nested issue raw:', nestedIssues[0]);
                     this.issues = nestedIssues.map((i: any) => ({
                         key: i.key,
-                        summary: i.fields?.summary || i.summary || 'No Summary'
+                        summary: i.fields?.summary || i.summary || 'No Summary',
+                        test_case_filename: i.test_case_filename || i.fields?.test_case_filename,
+                        test_cases_generated: i.test_cases_generated ?? i.fields?.test_cases_generated ?? false,
+                        is_qa_approved: false // Always false for now
                     }));
+                    console.log('First mapped issue:', this.issues[0]);
                 } else if (Array.isArray(directIssues)) {
-                    this.issues = directIssues;
+                    console.log('📦 Using direct issues structure');
+                    console.log('First direct issue raw:', directIssues[0]);
+                    this.issues = directIssues.map((i: any) => ({
+                        key: i.key,
+                        summary: i.summary || 'No Summary',
+                        test_case_filename: i.test_case_filename,
+                        test_cases_generated: i.test_cases_generated ?? false,
+                        is_qa_approved: false
+                    }));
+                    console.log('First mapped issue:', this.issues[0]);
                 } else if (response.data?.error) {
                     // If the backend returns an error with 200 (sometimes seen)
                     if (!silent) this.error = response.data.error;
@@ -69,7 +90,8 @@ class IssueStore {
                         this.fetchIssueDetail(firstIssue.key);
                         // Also check it by default
                         this.selectedIssueKeys.add(firstIssue.key);
-                        this.batchProcessingStatus.set(firstIssue.key, 'pending');
+                        const initialStatus = firstIssue.test_cases_generated ? 'completed' : 'pending';
+                        this.batchProcessingStatus.set(firstIssue.key, initialStatus);
                     }
                 }
             });
@@ -102,26 +124,45 @@ class IssueStore {
         // Only clear if we are starting a fresh fetch
         try {
             const response = await jiraApi.fetchIssueDetail(issueKey);
+            console.log('🔍 Issue Detail API Response:', response.data);
 
             runInAction(() => {
                 const detail = response.data?.issue;
                 if (detail) {
-                    this.selectedIssue = {
+                    // test_cases_generated and test_case_filename are at ROOT level, not in issue object
+                    const issueDetail: IssueDetail = {
                         key: issueKey,
                         summary: detail.summary || 'No Summary',
-                        description: detail.description || 'No description available for this issue.'
+                        description: detail.description || 'No description available for this issue.',
+                        test_case_filename: response.data.test_case_filename, // From root level
+                        test_cases_generated: !!response.data.test_cases_generated, // From root level
+                        is_qa_approved: false // Always false
                     };
+
+                    // Cache the detail
+                    this.issueDetailsCache.set(issueKey, issueDetail);
+                    this.selectedIssue = issueDetail;
+
+                    console.log('✅ Mapped selectedIssue:', this.selectedIssue);
+                    console.log('📦 Cached detail for:', issueKey);
                     this.error = null; // Clear error on success
                 } else if (response.data?.error) {
                     this.error = response.data.error;
                     this.selectedIssue = null;
                 } else {
                     // Fallback if structure is different but contains data
-                    this.selectedIssue = {
+                    const issueDetail: IssueDetail = {
                         key: response.data.key || issueKey,
                         summary: response.data.summary || 'No Summary',
-                        description: response.data.description || 'No description'
+                        description: response.data.description || 'No description',
+                        test_case_filename: response.data.test_case_filename,
+                        test_cases_generated: !!response.data.test_cases_generated,
+                        is_qa_approved: false // Always false
                     };
+
+                    // Cache the detail
+                    this.issueDetailsCache.set(issueKey, issueDetail);
+                    this.selectedIssue = issueDetail;
                     this.error = null;
                 }
                 this.loading = false;
@@ -188,7 +229,9 @@ class IssueStore {
             }
         } else {
             this.selectedIssueKeys.add(issueKey);
-            this.batchProcessingStatus.set(issueKey, 'pending');
+            const issue = this.issues.find(i => i.key === issueKey);
+            const initialStatus = issue?.test_cases_generated ? 'completed' : 'pending';
+            this.batchProcessingStatus.set(issueKey, initialStatus);
             // Auto fetch detail for the latest checked issue to show in detail view
             this.fetchIssueDetail(issueKey);
         }
@@ -197,7 +240,8 @@ class IssueStore {
     selectAllIssues() {
         this.issues.forEach(issue => {
             this.selectedIssueKeys.add(issue.key);
-            this.batchProcessingStatus.set(issue.key, 'pending');
+            const initialStatus = issue.test_cases_generated ? 'completed' : 'pending';
+            this.batchProcessingStatus.set(issue.key, initialStatus);
         });
     }
 
