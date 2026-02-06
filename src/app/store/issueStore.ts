@@ -143,8 +143,20 @@ class IssueStore {
                     this.issueDetailsCache.set(issueKey, issueDetail);
                     this.selectedIssue = issueDetail;
 
+                    // IMPORTANT: Also update the issues array to prevent button flicker
+                    const issueIndex = this.issues.findIndex(i => i.key === issueKey);
+                    if (issueIndex !== -1) {
+                        this.issues[issueIndex] = {
+                            ...this.issues[issueIndex],
+                            test_case_filename: issueDetail.test_case_filename,
+                            test_cases_generated: issueDetail.test_cases_generated,
+                            is_qa_approved: issueDetail.is_qa_approved
+                        };
+                    }
+
                     console.log('✅ Mapped selectedIssue:', this.selectedIssue);
                     console.log('📦 Cached detail for:', issueKey);
+                    console.log('🔄 Updated issues array for:', issueKey);
                     this.error = null; // Clear error on success
                 } else if (response.data?.error) {
                     this.error = response.data.error;
@@ -163,6 +175,18 @@ class IssueStore {
                     // Cache the detail
                     this.issueDetailsCache.set(issueKey, issueDetail);
                     this.selectedIssue = issueDetail;
+
+                    // Also update the issues array to prevent button flicker
+                    const issueIndex = this.issues.findIndex(i => i.key === issueKey);
+                    if (issueIndex !== -1) {
+                        this.issues[issueIndex] = {
+                            ...this.issues[issueIndex],
+                            test_case_filename: issueDetail.test_case_filename,
+                            test_cases_generated: issueDetail.test_cases_generated,
+                            is_qa_approved: issueDetail.is_qa_approved
+                        };
+                    }
+
                     this.error = null;
                 }
                 this.loading = false;

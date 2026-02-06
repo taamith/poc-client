@@ -198,91 +198,74 @@ const IssueDetailView: React.FC = observer(() => {
                         )
                     )}
 
-                    <Box sx={{ pt: 2, display: 'flex', gap: 2 }}>
-                        {(() => {
-                            const baseUrl = 'https://bscsolutionsinc-dev-ed.develop.lightning.force.com/lightning/page/home';
+                    {/* Hide button section in batch mode - individual buttons are on each row */}
+                    {!isBatch && (
+                        <Box sx={{ pt: 2, display: 'flex', gap: 2 }}>
+                            {(() => {
+                                const baseUrl = 'https://bscsolutionsinc-dev-ed.develop.lightning.force.com/lightning/page/home';
 
-                            let allHaveTestPlans = false;
-
-                            if (isBatch) {
-                                // For batch: check all selected issues in the issues array
-                                allHaveTestPlans = Array.from(issueStore.selectedIssueKeys).every(key => {
-                                    const issue = issueStore.issues.find(i => i.key === key);
-                                    console.log('Checking issue (batch):', key, {
-                                        found: !!issue,
-                                        test_cases_generated: issue?.test_cases_generated,
-                                        test_case_filename: issue?.test_case_filename,
-                                        passes: !!(issue?.test_cases_generated && issue?.test_case_filename)
-                                    });
-                                    return !!(issue?.test_cases_generated && issue?.test_case_filename);
-                                });
-                            } else {
                                 // For single issue: check the selectedIssue (detail) object
-                                allHaveTestPlans = !!(issueStore.selectedIssue?.test_cases_generated &&
+                                const allHaveTestPlans = !!(issueStore.selectedIssue?.test_cases_generated &&
                                     issueStore.selectedIssue?.test_case_filename);
                                 console.log('Checking single issue (detail):', {
                                     test_cases_generated: issueStore.selectedIssue?.test_cases_generated,
                                     test_case_filename: issueStore.selectedIssue?.test_case_filename,
                                     passes: allHaveTestPlans
                                 });
-                            }
 
-                            console.log('Button decision:', { allHaveTestPlans, selectedCount, isBatch, loading: issueStore.loading });
+                                console.log('Button decision:', { allHaveTestPlans, selectedCount, loading: issueStore.loading });
 
-                            // Show loading state while fetching issue details
-                            if (!isBatch && issueStore.loading) {
+                                // Show loading state while fetching issue details
+                                if (issueStore.loading) {
+                                    return (
+                                        <Button
+                                            variant="contained"
+                                            color="primary"
+                                            disabled
+                                            startIcon={<CircularProgress size={20} color="inherit" />}
+                                            sx={{ bgcolor: '#0052CC', textTransform: 'none', fontWeight: 600 }}
+                                        >
+                                            Loading...
+                                        </Button>
+                                    );
+                                }
+
+                                if (allHaveTestPlans && selectedCount > 0) {
+                                    console.log('✅ Showing VIEW TEST PLAN button');
+                                    return (
+                                        <Button
+                                            variant="contained"
+                                            color="success"
+                                            startIcon={<VisibilityIcon />}
+                                            onClick={() => {
+                                                console.log('View Test Plan(s) clicked');
+                                                // Action for view will be implemented later
+                                            }}
+                                            sx={{ bgcolor: '#36B37E', '&:hover': { bgcolor: '#2A9A6A' }, textTransform: 'none', fontWeight: 600 }}
+                                        >
+                                            View Test Plan
+                                        </Button>
+                                    );
+                                }
+
+                                console.log('❌ Showing GENERATE TEST PLAN button');
                                 return (
                                     <Button
                                         variant="contained"
                                         color="primary"
-                                        disabled
-                                        startIcon={<CircularProgress size={20} color="inherit" />}
-                                        sx={{ bgcolor: '#0052CC', textTransform: 'none', fontWeight: 600 }}
-                                    >
-                                        Loading...
-                                    </Button>
-                                );
-                            }
-
-                            if (allHaveTestPlans && selectedCount > 0) {
-                                console.log('✅ Showing VIEW TEST PLAN button');
-                                return (
-                                    <Button
-                                        variant="contained"
-                                        color="success"
-                                        startIcon={<VisibilityIcon />}
+                                        startIcon={isProcessing ? <CircularProgress size={20} color="inherit" /> : <PlayArrowIcon />}
                                         onClick={() => {
-                                            console.log('View Test Plan(s) clicked');
-                                            // Action for view will be implemented later
+                                            issueStore.generateTestPlan(baseUrl);
                                         }}
-                                        sx={{ bgcolor: '#36B37E', '&:hover': { bgcolor: '#2A9A6A' }, textTransform: 'none', fontWeight: 600 }}
+                                        disabled={isProcessing}
+                                        sx={{ bgcolor: '#0052CC', '&:hover': { bgcolor: '#0747A6' }, textTransform: 'none', fontWeight: 600 }}
                                     >
-                                        {isBatch ? 'View Test Plans' : 'View Test Plan'}
+                                        {isProcessing ? 'Generating...' : 'Generate Test Plan'}
                                     </Button>
                                 );
-                            }
-
-                            console.log('❌ Showing GENERATE TEST PLAN button');
-                            return (
-                                <Button
-                                    variant="contained"
-                                    color="primary"
-                                    startIcon={isProcessing ? <CircularProgress size={20} color="inherit" /> : <PlayArrowIcon />}
-                                    onClick={() => {
-                                        if (isBatch) {
-                                            issueStore.processBatch(baseUrl);
-                                        } else {
-                                            issueStore.generateTestPlan(baseUrl);
-                                        }
-                                    }}
-                                    disabled={isProcessing}
-                                    sx={{ bgcolor: '#0052CC', '&:hover': { bgcolor: '#0747A6' }, textTransform: 'none', fontWeight: 600 }}
-                                >
-                                    {isProcessing ? 'Generating...' : isBatch ? 'Generate Test Plans' : 'Generate Test Plan'}
-                                </Button>
-                            );
-                        })()}
-                    </Box>
+                            })()}
+                        </Box>
+                    )}
 
                     {issueStore.generationMessage && !isBatch && (
                         <Typography variant="body2" sx={{ color: '#36B37E', fontWeight: 600, mt: 2 }}>
