@@ -15,6 +15,7 @@ import {
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { issueStore } from '../../app/store/issueStore';
+import TestPlanEditorModal from './TestPlanEditorModal';
 
 const IssueDetailView: React.FC = observer(() => {
 
@@ -27,6 +28,11 @@ const IssueDetailView: React.FC = observer(() => {
     const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
     const [popoverContent, setPopoverContent] = React.useState<{ key: string, summary: string } | null>(null);
 
+    // Test Plan Editor Modal state
+    const [modalOpen, setModalOpen] = React.useState<boolean>(false);
+    const [selectedFilename, setSelectedFilename] = React.useState<string | null>(null);
+    const [isQaApproved, setIsQaApproved] = React.useState<boolean>(false);
+
     const handlePopoverOpen = (event: React.MouseEvent<HTMLElement>, key: string, summary: string) => {
         setAnchorEl(event.currentTarget);
         setPopoverContent({ key, summary });
@@ -38,6 +44,20 @@ const IssueDetailView: React.FC = observer(() => {
     };
 
     const openPopover = Boolean(anchorEl);
+
+    const handleOpenTestPlan = (filename: string, qaApproved: boolean) => {
+        setSelectedFilename(filename);
+        setIsQaApproved(qaApproved);
+        setModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        console.log('🟢 IssueDetailView handleCloseModal called');
+        setModalOpen(false);
+        setSelectedFilename(null);
+        setIsQaApproved(false);
+        console.log('🟢 Modal state reset complete');
+    };
 
     if (selectedCount === 0 && !isLoading) {
         return (
@@ -139,8 +159,9 @@ const IssueDetailView: React.FC = observer(() => {
                                                     startIcon={<VisibilityIcon sx={{ fontSize: '14px !important' }} />}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        console.log('View Test Plan clicked for', key);
-                                                        // TODO: Implement view action
+                                                        const filename = issue?.test_case_filename || '';
+                                                        const qaApproved = issue?.is_qa_approved || false;
+                                                        handleOpenTestPlan(filename, qaApproved);
                                                     }}
                                                     sx={{
                                                         bgcolor: '#36B37E',
@@ -238,8 +259,9 @@ const IssueDetailView: React.FC = observer(() => {
                                             color="success"
                                             startIcon={<VisibilityIcon />}
                                             onClick={() => {
-                                                console.log('View Test Plan(s) clicked');
-                                                // Action for view will be implemented later
+                                                const filename = issueStore.selectedIssue?.test_case_filename || '';
+                                                const qaApproved = issueStore.selectedIssue?.is_qa_approved || false;
+                                                handleOpenTestPlan(filename, qaApproved);
                                             }}
                                             sx={{ bgcolor: '#36B37E', '&:hover': { bgcolor: '#2A9A6A' }, textTransform: 'none', fontWeight: 600 }}
                                         >
@@ -308,6 +330,14 @@ const IssueDetailView: React.FC = observer(() => {
                     </Typography>
                 </Box>
             </Popover>
+
+            {/* Test Plan Editor Modal */}
+            <TestPlanEditorModal
+                open={modalOpen}
+                onClose={handleCloseModal}
+                filename={selectedFilename}
+                isQaApproved={isQaApproved}
+            />
         </Card >
     );
 });

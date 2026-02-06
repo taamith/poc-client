@@ -39,7 +39,6 @@ class IssueStore {
 
         try {
             const response = await jiraApi.fetchIssues();
-            console.log('🔍 Raw API Response:', response.data);
 
             // Handle the observed nested response structure: { issues: { issues: [...] } }
             const nestedIssues = response.data?.issues?.issues;
@@ -47,8 +46,6 @@ class IssueStore {
 
             runInAction(() => {
                 if (Array.isArray(nestedIssues)) {
-                    console.log('📦 Using nested issues structure');
-                    console.log('First nested issue raw:', nestedIssues[0]);
                     this.issues = nestedIssues.map((i: any) => ({
                         key: i.key,
                         summary: i.fields?.summary || i.summary || 'No Summary',
@@ -56,10 +53,7 @@ class IssueStore {
                         test_cases_generated: i.test_cases_generated ?? i.fields?.test_cases_generated ?? false,
                         is_qa_approved: false // Always false for now
                     }));
-                    console.log('First mapped issue:', this.issues[0]);
                 } else if (Array.isArray(directIssues)) {
-                    console.log('📦 Using direct issues structure');
-                    console.log('First direct issue raw:', directIssues[0]);
                     this.issues = directIssues.map((i: any) => ({
                         key: i.key,
                         summary: i.summary || 'No Summary',
@@ -67,7 +61,6 @@ class IssueStore {
                         test_cases_generated: i.test_cases_generated ?? false,
                         is_qa_approved: false
                     }));
-                    console.log('First mapped issue:', this.issues[0]);
                 } else if (response.data?.error) {
                     // If the backend returns an error with 200 (sometimes seen)
                     if (!silent) this.error = response.data.error;
@@ -93,6 +86,9 @@ class IssueStore {
                         const initialStatus = firstIssue.test_cases_generated ? 'completed' : 'pending';
                         this.batchProcessingStatus.set(firstIssue.key, initialStatus);
                     }
+
+                    // Prefetch test plan status for all issues to eliminate button lag
+                    this.prefetchTestPlanStatus();
                 }
             });
             return true;
@@ -124,7 +120,6 @@ class IssueStore {
         // Only clear if we are starting a fresh fetch
         try {
             const response = await jiraApi.fetchIssueDetail(issueKey);
-            console.log('🔍 Issue Detail API Response:', response.data);
 
             runInAction(() => {
                 const detail = response.data?.issue;
@@ -154,9 +149,6 @@ class IssueStore {
                         };
                     }
 
-                    console.log('✅ Mapped selectedIssue:', this.selectedIssue);
-                    console.log('📦 Cached detail for:', issueKey);
-                    console.log('🔄 Updated issues array for:', issueKey);
                     this.error = null; // Clear error on success
                 } else if (response.data?.error) {
                     this.error = response.data.error;
@@ -192,13 +184,53 @@ class IssueStore {
                 this.loading = false;
             });
         } catch (err: any) {
-            console.error('Fetch issue detail error:', err);
             runInAction(() => {
                 const apiError = err.response?.data?.error || err.message || 'Failed to fetch issue details';
                 this.error = apiError;
                 this.loading = false;
             });
         }
+    }
+
+    // Prefetch test plan status for all issues in the background
+    async prefetchTestPlanStatus() {
+        // Fetch details for all issues in parallel to get test plan status
+        const prefetchPromises = this.issues.map(async (issue) => {
+            try {
+                const response = await jiraApi.fetchIssueDetail(issue.key);
+
+                runInAction(() => {
+                    // Update the issue in the array with test plan status
+                    const issueIndex = this.issues.findIndex(i => i.key === issue.key);
+                    if (issueIndex !== -1) {
+                        this.issues[issueIndex] = {
+                            ...this.issues[issueIndex],
+                            test_case_filename: response.data.test_case_filename,
+                            test_cases_generated: !!response.data.test_cases_generated,
+                            is_qa_approved: false
+                        };
+                    }
+
+                    // Also update cache
+                    const detail = response.data?.issue;
+                    if (detail) {
+                        this.issueDetailsCache.set(issue.key, {
+                            key: issue.key,
+                            summary: detail.summary || 'No Summary',
+                            description: detail.description || 'No description',
+                            test_case_filename: response.data.test_case_filename,
+                            test_cases_generated: !!response.data.test_cases_generated,
+                            is_qa_approved: false
+                        });
+                    }
+                });
+            } catch (err) {
+                // Silently fail for prefetch - don't disrupt the user experience
+            }
+        });
+
+        // Wait for all prefetches to complete
+        await Promise.all(prefetchPromises);
     }
 
     setAuthenticated(value: boolean) {
