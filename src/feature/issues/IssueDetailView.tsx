@@ -52,11 +52,9 @@ const IssueDetailView: React.FC = observer(() => {
     };
 
     const handleCloseModal = () => {
-        console.log('🟢 IssueDetailView handleCloseModal called');
         setModalOpen(false);
         setSelectedFilename(null);
         setIsQaApproved(false);
-        console.log('🟢 Modal state reset complete');
     };
 
     if (selectedCount === 0 && !isLoading) {
@@ -116,14 +114,9 @@ const IssueDetailView: React.FC = observer(() => {
                                     const issue = cachedDetail || listIssue;
 
                                     const summary = issue?.summary || key;
-                                    const hasTestPlan = issue?.test_cases_generated && issue?.test_case_filename;
-
-                                    console.log(`Issue ${key}:`, {
-                                        fromCache: !!cachedDetail,
-                                        test_cases_generated: issue?.test_cases_generated,
-                                        test_case_filename: issue?.test_case_filename,
-                                        hasTestPlan
-                                    });
+                                    const hasTestPlan = !!issue?.test_cases_generated;
+                                    const batchStatus = issueStore.batchProcessingStatus.get(key);
+                                    const isItemProcessing = batchStatus === 'processing';
 
                                     return (
                                         <Box
@@ -181,11 +174,35 @@ const IssueDetailView: React.FC = observer(() => {
                                                     size="small"
                                                     variant="contained"
                                                     color="primary"
-                                                    startIcon={<PlayArrowIcon sx={{ fontSize: '14px !important' }} />}
-                                                    onClick={(e) => {
+                                                    startIcon={isItemProcessing ? <CircularProgress size={14} color="inherit" /> : <PlayArrowIcon sx={{ fontSize: '14px !important' }} />}
+                                                    disabled={isItemProcessing || isProcessing}
+                                                    onClick={async (e) => {
                                                         e.stopPropagation();
-                                                        console.log('Generate Test Plan clicked for', key);
-                                                        // TODO: Implement generate action for individual issue
+                                                        const baseUrl = 'https://bscsolutionsinc-dev-ed.develop.lightning.force.com/lightning/page/home';
+                                                        const cachedDetail = issueStore.issueDetailsCache.get(key);
+                                                        const description = cachedDetail?.description || summary;
+                                                        issueStore.batchProcessingStatus.set(key, 'processing');
+                                                        try {
+                                                            const { jiraApi } = await import('../../lib/api/jira');
+                                                            if (!cachedDetail) {
+                                                                const detailRes = await jiraApi.fetchIssueDetail(key);
+                                                                const desc = detailRes.data?.issue?.description || '';
+                                                                await jiraApi.generateTestPlan({ summary, user_story: desc || summary, base_url: baseUrl });
+                                                            } else {
+                                                                await jiraApi.generateTestPlan({ summary, user_story: description, base_url: baseUrl });
+                                                            }
+                                                            issueStore.batchProcessingStatus.set(key, 'completed');
+                                                            // Optimistic update
+                                                            const idx = issueStore.issues.findIndex(i => i.key === key);
+                                                            if (idx !== -1) {
+                                                                issueStore.issues[idx] = { ...issueStore.issues[idx], test_cases_generated: true };
+                                                            }
+                                                            if (cachedDetail) {
+                                                                issueStore.issueDetailsCache.set(key, { ...cachedDetail, test_cases_generated: true });
+                                                            }
+                                                        } catch {
+                                                            issueStore.batchProcessingStatus.set(key, 'failed');
+                                                        }
                                                     }}
                                                     sx={{
                                                         bgcolor: '#0052CC',
@@ -198,7 +215,7 @@ const IssueDetailView: React.FC = observer(() => {
                                                         py: 0.5
                                                     }}
                                                 >
-                                                    Generate
+                                                    {isItemProcessing ? 'Generating...' : 'Generate'}
                                                 </Button>
                                             )}
                                         </Box>
@@ -219,22 +236,44 @@ const IssueDetailView: React.FC = observer(() => {
                         )
                     )}
 
-                    {/* Hide button section in batch mode - individual buttons are on each row */}
+                    {/* Common Generate button for batch mode */}
+                    {isBatch && (() => {
+                        const baseUrl = 'https://bscsolutionsinc-dev-ed.develop.lightning.force.com/lightning/page/home';
+                        const pendingKeys = Array.from(issueStore.selectedIssueKeys).filter((key) => {
+                            const cachedDetail = issueStore.issueDetailsCache.get(key);
+                            const listIssue = issueStore.issues.find(i => i.key === key);
+                            const issue = cachedDetail || listIssue;
+                            return !issue?.test_cases_generated;
+                        });
+                        const allGenerated = pendingKeys.length === 0;
+
+                        if (!allGenerated) {
+                            return (
+                                <Box sx={{ pt: 2, display: 'flex', gap: 2 }}>
+                                    <Button
+                                        variant="contained"
+                                        color="primary"
+                                        startIcon={isProcessing ? <CircularProgress size={20} color="inherit" /> : <PlayArrowIcon />}
+                                        onClick={() => issueStore.processBatch(baseUrl)}
+                                        disabled={isProcessing}
+                                        sx={{ bgcolor: '#0052CC', '&:hover': { bgcolor: '#0747A6' }, textTransform: 'none', fontWeight: 600 }}
+                                    >
+                                        {isProcessing ? 'Generating...' : `Generate Test Plans (${pendingKeys.length})`}
+                                    </Button>
+                                </Box>
+                            );
+                        }
+                        return null;
+                    })()}
+
+                    {/* Button section for single issue mode */}
                     {!isBatch && (
                         <Box sx={{ pt: 2, display: 'flex', gap: 2 }}>
                             {(() => {
                                 const baseUrl = 'https://bscsolutionsinc-dev-ed.develop.lightning.force.com/lightning/page/home';
 
                                 // For single issue: check the selectedIssue (detail) object
-                                const allHaveTestPlans = !!(issueStore.selectedIssue?.test_cases_generated &&
-                                    issueStore.selectedIssue?.test_case_filename);
-                                console.log('Checking single issue (detail):', {
-                                    test_cases_generated: issueStore.selectedIssue?.test_cases_generated,
-                                    test_case_filename: issueStore.selectedIssue?.test_case_filename,
-                                    passes: allHaveTestPlans
-                                });
-
-                                console.log('Button decision:', { allHaveTestPlans, selectedCount, loading: issueStore.loading });
+                                const allHaveTestPlans = !!issueStore.selectedIssue?.test_cases_generated;
 
                                 // Show loading state while fetching issue details
                                 if (issueStore.loading) {
@@ -252,7 +291,6 @@ const IssueDetailView: React.FC = observer(() => {
                                 }
 
                                 if (allHaveTestPlans && selectedCount > 0) {
-                                    console.log('✅ Showing VIEW TEST PLAN button');
                                     return (
                                         <Button
                                             variant="contained"
@@ -270,7 +308,6 @@ const IssueDetailView: React.FC = observer(() => {
                                     );
                                 }
 
-                                console.log('❌ Showing GENERATE TEST PLAN button');
                                 return (
                                     <Button
                                         variant="contained"

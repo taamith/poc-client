@@ -1,19 +1,21 @@
 import { useState } from 'react';
 import { AppBar, Toolbar, Typography, Button, Box, Container, CircularProgress } from '@mui/material';
 import { observer } from 'mobx-react-lite';
+import { useNavigate } from 'react-router-dom';
 import { jiraApi } from '../../lib/api/jira';
 import { issueStore } from '../store/issueStore';
 
 const Header = observer(() => {
     const [isDisconnecting, setIsDisconnecting] = useState(false);
+    const navigate = useNavigate();
 
     const handleDisconnect = async () => {
         setIsDisconnecting(true);
         try {
             await jiraApi.disconnect();
-            // Reset store state
             issueStore.setAuthenticated(false);
             issueStore.clearSelectedIssue();
+            navigate('/login', { replace: true });
         } catch (err) {
             console.error('Failed to disconnect', err);
         } finally {
@@ -34,21 +36,9 @@ const Header = observer(() => {
             <Container maxWidth="xl">
                 <Toolbar disableGutters sx={{ minHeight: 56 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1, gap: 1.5 }}>
-                        <Box
-                            sx={{
-                                width: 32, height: 32, borderRadius: '3px',
-                                bgcolor: '#0052CC',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                color: 'white', fontWeight: 'bold', fontSize: '0.8rem'
-                            }}
-                        >
-                            QA
-                        </Box>
-                        <Box>
-                            <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1rem', color: '#172B4D' }}>
-                                POC JIRA CLIENT
-                            </Typography>
-                        </Box>
+                        <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1rem', color: '#172B4D' }}>
+                            AutoSprint AI
+                        </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', gap: 1 }}>
                         <Button

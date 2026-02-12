@@ -1,11 +1,48 @@
-import React, { useState } from 'react';
-import { Card, CardContent, Typography, Button, Box, Stack, CircularProgress, Backdrop } from '@mui/material';
+import React, { useState, useRef, useEffect } from 'react';
+import {
+    Typography, Button, Box, Stack, Backdrop, CircularProgress,
+    Paper, TextField, InputAdornment, ClickAwayListener, Divider
+} from '@mui/material';
 import { observer } from 'mobx-react-lite';
+import { useNavigate } from 'react-router-dom';
+import SearchIcon from '@mui/icons-material/Search';
+import LockIcon from '@mui/icons-material/Lock';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import StarIcon from '@mui/icons-material/Star';
 import { jiraApi } from '../../lib/api/jira';
 import { issueStore } from '../../app/store/issueStore';
 
+interface Provider {
+    id: string;
+    name: string;
+    description: string;
+    icon: string;
+    popular: boolean;
+}
+
+const providers: Provider[] = [
+    { id: 'jira', name: 'Jira', description: 'Project Management', icon: '📋', popular: true },
+];
+
 const LoginView: React.FC = observer(() => {
     const [isAuthenticating, setIsAuthenticating] = useState(false);
+    const [selectedProvider, setSelectedProvider] = useState<Provider>(providers[0]);
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const searchRef = useRef<HTMLInputElement>(null);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        if (dropdownOpen && searchRef.current) {
+            searchRef.current.focus();
+        }
+    }, [dropdownOpen]);
+
+    const filteredProviders = providers.filter(p =>
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.description.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     const handleLogin = () => {
         const authUrl = 'https://9xd63zeaqb.execute-api.us-east-1.amazonaws.com/dev/auth/jira';
@@ -17,23 +54,28 @@ const LoginView: React.FC = observer(() => {
                 if (popup.closed) {
                     clearInterval(timer);
                     setIsAuthenticating(false);
-                    await issueStore.fetchIssues();
+                    const success = await issueStore.fetchIssues();
+                    if (success) {
+                        navigate('/issues', { replace: true });
+                    }
                     return;
                 }
 
-                // Silent fetch doesn't trigger the global Loading state
                 const success = await issueStore.fetchIssues(true);
                 if (success) {
                     clearInterval(timer);
                     setIsAuthenticating(false);
-                    try {
-                        popup.close();
-                    } catch (e) {
-                        // Cross-origin check
-                    }
+                    try { popup.close(); } catch (_) { /* cross-origin */ }
+                    navigate('/issues', { replace: true });
                 }
             }, 2000);
         }
+    };
+
+    const handleSelectProvider = (provider: Provider) => {
+        setSelectedProvider(provider);
+        setDropdownOpen(false);
+        setSearchQuery('');
     };
 
     return (
@@ -43,9 +85,7 @@ const LoginView: React.FC = observer(() => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: `radial-gradient(1000px 700px at 10% 20%, rgba(14, 107, 107, 0.05), transparent 60%),
-                     radial-gradient(800px 800px at 90% 10%, rgba(184, 135, 72, 0.08), transparent 55%),
-                     #F4F5F7`
+                background: 'linear-gradient(135deg, #3614b2 0%, #5a1196 50%, #6d0c69 100%)',
             }}
         >
             <Backdrop
@@ -55,8 +95,8 @@ const LoginView: React.FC = observer(() => {
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 2,
-                    bgcolor: 'rgba(9, 30, 66, 0.54)', // Stronger Atlassian-style overlay color
-                    backdropFilter: 'blur(4px)' // Blurs the background content to prevent text overlap
+                    bgcolor: 'rgba(9, 30, 66, 0.54)',
+                    backdropFilter: 'blur(4px)',
                 }}
                 open={isAuthenticating}
             >
@@ -69,53 +109,284 @@ const LoginView: React.FC = observer(() => {
                 </Typography>
             </Backdrop>
 
-            <Card sx={{ maxWidth: 400, width: '100%', borderRadius: '3px', p: 4 }}>
-                <CardContent>
-                    <Stack spacing={4} alignItems="center" textAlign="center">
-                        <Box
+            <Paper
+                elevation={8}
+                sx={{
+                    maxWidth: 480,
+                    width: '100%',
+                    borderRadius: '16px',
+                    p: { xs: 3, sm: 5 },
+                    mx: 2,
+                }}
+            >
+                <Stack spacing={3} alignItems="center" textAlign="center">
+                    {/* Rocket Logo */}
+                    <Box sx={{ fontSize: '4rem', lineHeight: 1 }}>🚀</Box>
+
+                    {/* Brand Name */}
+                    <Box>
+                        <Typography
+                            variant="h4"
                             sx={{
-                                width: 60, height: 60, borderRadius: '4px',
-                                bgcolor: '#0052CC',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                color: 'white', fontWeight: 'bold', fontSize: '1.5rem',
-                                boxShadow: '0 4px 12px rgba(0, 82, 204, 0.3)'
+                                fontFamily: '"Fraunces", serif',
+                                fontWeight: 600,
+                                background: 'linear-gradient(135deg, #3614b2 0%, #5a1196 50%, #6d0c69 100%)',
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent',
+                                mb: 0.5,
                             }}
                         >
-                            QA
+                            AutoSprint AI
+                        </Typography>
+                    </Box>
+
+                    {/* Welcome Section */}
+                    <Box>
+                        <Typography variant="h5" sx={{ fontWeight: 700, color: '#172B4D', mb: 0.5 }}>
+                            Welcome Back
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#6B778C' }}>
+                            Select your authentication provider
+                            <Box component="span" sx={{ color: '#5a1196', ml: 0.5 }}>.</Box>
+                        </Typography>
+                    </Box>
+
+                    {/* Provider Dropdown */}
+                    <Box sx={{ width: '100%', textAlign: 'left' }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: '#42526E', mb: 1 }}>
+                            Authentication Provider
+                        </Typography>
+
+                        <ClickAwayListener onClickAway={() => { setDropdownOpen(false); setSearchQuery(''); }}>
+                            <Box sx={{ position: 'relative' }}>
+                                {/* Dropdown Trigger */}
+                                <Box
+                                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        border: dropdownOpen ? '2px solid #4a12a4' : '1.5px solid #DFE1E6',
+                                        borderRadius: '10px',
+                                        p: 1.5,
+                                        cursor: 'pointer',
+                                        transition: 'border-color 0.2s',
+                                        '&:hover': {
+                                            borderColor: dropdownOpen ? '#4a12a4' : '#B3BAC5',
+                                        },
+                                    }}
+                                >
+                                    {selectedProvider ? (
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                            <Box
+                                                sx={{
+                                                    width: 36, height: 36, borderRadius: '8px',
+                                                    bgcolor: '#E8F0FE', display: 'flex',
+                                                    alignItems: 'center', justifyContent: 'center',
+                                                    fontSize: '1.2rem',
+                                                }}
+                                            >
+                                                {selectedProvider.icon}
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="body2" sx={{ fontWeight: 600, color: '#172B4D', lineHeight: 1.3 }}>
+                                                    {selectedProvider.name}
+                                                </Typography>
+                                                <Typography variant="caption" sx={{ color: '#6B778C' }}>
+                                                    {selectedProvider.description}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    ) : (
+                                        <Typography variant="body2" sx={{ color: '#A5ADBA' }}>
+                                            Choose a provider...
+                                        </Typography>
+                                    )}
+                                    {dropdownOpen
+                                        ? <KeyboardArrowUpIcon sx={{ color: '#6B778C' }} />
+                                        : <KeyboardArrowDownIcon sx={{ color: '#6B778C' }} />
+                                    }
+                                </Box>
+
+                                {/* Dropdown Panel */}
+                                {dropdownOpen && (
+                                    <Paper
+                                        elevation={4}
+                                        sx={{
+                                            position: 'absolute',
+                                            top: '100%',
+                                            left: 0,
+                                            right: 0,
+                                            mt: 0.5,
+                                            borderRadius: '10px',
+                                            border: '1px solid #DFE1E6',
+                                            zIndex: 10,
+                                            overflow: 'hidden',
+                                        }}
+                                    >
+                                        {/* Search Input */}
+                                        <Box sx={{ p: 1.5 }}>
+                                            <TextField
+                                                inputRef={searchRef}
+                                                size="small"
+                                                fullWidth
+                                                placeholder="Search providers..."
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                                slotProps={{
+                                                    input: {
+                                                        startAdornment: (
+                                                            <InputAdornment position="start">
+                                                                <SearchIcon sx={{ color: '#A5ADBA', fontSize: 20 }} />
+                                                            </InputAdornment>
+                                                        ),
+                                                    },
+                                                }}
+                                                sx={{
+                                                    '& .MuiOutlinedInput-root': {
+                                                        borderRadius: '8px',
+                                                        fontSize: '0.875rem',
+                                                    },
+                                                }}
+                                            />
+                                        </Box>
+
+                                        {/* Popular Providers Section */}
+                                        <Box sx={{ px: 1.5, pb: 0.5 }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                                                <StarIcon sx={{ color: '#F5A623', fontSize: 16 }} />
+                                                <Typography
+                                                    variant="caption"
+                                                    sx={{ fontWeight: 700, color: '#42526E', letterSpacing: '0.05em', textTransform: 'uppercase' }}
+                                                >
+                                                    Popular Providers
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+
+                                        {/* Provider List */}
+                                        {filteredProviders.map((provider) => (
+                                            <Box
+                                                key={provider.id}
+                                                onClick={() => handleSelectProvider(provider)}
+                                                sx={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'space-between',
+                                                    px: 1.5,
+                                                    py: 1.2,
+                                                    cursor: 'pointer',
+                                                    transition: 'background-color 0.15s',
+                                                    bgcolor: selectedProvider?.id === provider.id ? '#F4F5F7' : 'transparent',
+                                                    '&:hover': { bgcolor: '#F4F5F7' },
+                                                }}
+                                            >
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                                    <Box
+                                                        sx={{
+                                                            width: 36, height: 36, borderRadius: '8px',
+                                                            bgcolor: '#E8F0FE', display: 'flex',
+                                                            alignItems: 'center', justifyContent: 'center',
+                                                            fontSize: '1.2rem',
+                                                        }}
+                                                    >
+                                                        {provider.icon}
+                                                    </Box>
+                                                    <Box>
+                                                        <Typography variant="body2" sx={{ fontWeight: 600, color: '#172B4D', lineHeight: 1.3 }}>
+                                                            {provider.name}
+                                                        </Typography>
+                                                        <Typography variant="caption" sx={{ color: '#6B778C' }}>
+                                                            {provider.description}
+                                                        </Typography>
+                                                    </Box>
+                                                </Box>
+                                                {provider.popular && (
+                                                    <Box
+                                                        sx={{
+                                                            bgcolor: '#4a12a4',
+                                                            color: '#fff',
+                                                            fontSize: '0.65rem',
+                                                            fontWeight: 700,
+                                                            px: 1,
+                                                            py: 0.3,
+                                                            borderRadius: '4px',
+                                                            textTransform: 'capitalize',
+                                                        }}
+                                                    >
+                                                        Popular
+                                                    </Box>
+                                                )}
+                                            </Box>
+                                        ))}
+
+                                        {filteredProviders.length === 0 && (
+                                            <Box sx={{ px: 1.5, py: 2, textAlign: 'center' }}>
+                                                <Typography variant="body2" sx={{ color: '#6B778C' }}>
+                                                    No providers found
+                                                </Typography>
+                                            </Box>
+                                        )}
+                                    </Paper>
+                                )}
+                            </Box>
+                        </ClickAwayListener>
+                    </Box>
+
+                    {/* Continue Button */}
+                    <Button
+                        fullWidth
+                        variant="contained"
+                        size="large"
+                        onClick={handleLogin}
+                        disabled={isAuthenticating || !selectedProvider}
+                        startIcon={<LockIcon sx={{ fontSize: 18 }} />}
+                        sx={{
+                            py: 1.5,
+                            borderRadius: '10px',
+                            background: 'linear-gradient(135deg, #3614b2 0%, #5a1196 50%, #6d0c69 100%)',
+                            fontWeight: 600,
+                            fontSize: '0.95rem',
+                            textTransform: 'none',
+                            boxShadow: '0 4px 14px rgba(54, 20, 178, 0.4)',
+                            '&:hover': {
+                                background: 'linear-gradient(135deg, #4a12a4 0%, #660f89 50%, #6d0e7b 100%)',
+                                boxShadow: '0 6px 20px rgba(54, 20, 178, 0.5)',
+                            },
+                            '&.Mui-disabled': {
+                                background: '#DFE1E6',
+                            },
+                        }}
+                    >
+                        Launch {selectedProvider?.name || 'Provider'}
+                    </Button>
+
+                    {/* Error Display */}
+                    {issueStore.error && (
+                        <Typography color="error" variant="caption">
+                            {issueStore.error}
+                        </Typography>
+                    )}
+
+                    {/* Terms Text */}
+                    <Typography variant="caption" sx={{ color: '#6B778C', lineHeight: 1.6 }}>
+                        By signing in, you agree to our{' '}
+                        <Box component="span" sx={{ color: '#4a12a4', cursor: 'pointer', textDecoration: 'underline' }}>
+                            Terms of Service
                         </Box>
-
-                        <Box>
-                            <Typography variant="h5" sx={{ fontWeight: 600, color: '#172B4D', mb: 1 }}>
-                                POC JIRA CLIENT
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                Connect your Jira account to start managing user stories and generating test plans.
-                            </Typography>
+                        {' '}and{' '}
+                        <Box component="span" sx={{ color: '#4a12a4', cursor: 'pointer', textDecoration: 'underline' }}>
+                            Privacy Policy
                         </Box>
+                    </Typography>
 
-                        <Button
-                            fullWidth
-                            variant="contained"
-                            size="large"
-                            onClick={handleLogin}
-                            disabled={isAuthenticating}
-                            sx={{
-                                py: 1.5,
-                                bgcolor: '#0052CC',
-                                '&:hover': { bgcolor: '#0747A6' }
-                            }}
-                        >
-                            Log in Jira
-                        </Button>
-
-                        {issueStore.error && !isAuthenticating && (
-                            <Typography color="error" variant="caption">
-                                {issueStore.error}
-                            </Typography>
-                        )}
-                    </Stack>
-                </CardContent>
-            </Card>
+                    {/* Footer */}
+                    <Divider sx={{ width: '100%' }} />
+                    <Typography variant="caption" sx={{ color: '#A5ADBA' }}>
+                        © AutoSprint AI, BSC Solutions India Pvt Ltd © 2026
+                    </Typography>
+                </Stack>
+            </Paper>
         </Box>
     );
 });

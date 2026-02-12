@@ -110,7 +110,7 @@ const IssueList: React.FC = observer(() => {
                                             }}
                                         />
                                         {/* Status indicator */}
-                                        {issue.test_cases_generated && issue.test_case_filename && (
+                                        {issue.test_cases_generated && (
                                             <Box
                                                 sx={{
                                                     mt: 0.5,

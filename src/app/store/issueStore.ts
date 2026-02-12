@@ -123,22 +123,24 @@ class IssueStore {
 
             runInAction(() => {
                 const detail = response.data?.issue;
+                const existing = this.issues.find(i => i.key === issueKey);
+                const hasDetailFlag = response.data.test_cases_generated !== undefined;
+
                 if (detail) {
-                    // test_cases_generated and test_case_filename are at ROOT level, not in issue object
                     const issueDetail: IssueDetail = {
                         key: issueKey,
                         summary: detail.summary || 'No Summary',
                         description: detail.description || 'No description available for this issue.',
-                        test_case_filename: response.data.test_case_filename, // From root level
-                        test_cases_generated: !!response.data.test_cases_generated, // From root level
-                        is_qa_approved: false // Always false
+                        test_case_filename: response.data.test_case_filename ?? existing?.test_case_filename,
+                        test_cases_generated: hasDetailFlag
+                            ? !!response.data.test_cases_generated
+                            : (existing?.test_cases_generated ?? false),
+                        is_qa_approved: false
                     };
 
-                    // Cache the detail
                     this.issueDetailsCache.set(issueKey, issueDetail);
                     this.selectedIssue = issueDetail;
 
-                    // IMPORTANT: Also update the issues array to prevent button flicker
                     const issueIndex = this.issues.findIndex(i => i.key === issueKey);
                     if (issueIndex !== -1) {
                         this.issues[issueIndex] = {
@@ -149,26 +151,25 @@ class IssueStore {
                         };
                     }
 
-                    this.error = null; // Clear error on success
+                    this.error = null;
                 } else if (response.data?.error) {
                     this.error = response.data.error;
                     this.selectedIssue = null;
                 } else {
-                    // Fallback if structure is different but contains data
                     const issueDetail: IssueDetail = {
                         key: response.data.key || issueKey,
                         summary: response.data.summary || 'No Summary',
                         description: response.data.description || 'No description',
-                        test_case_filename: response.data.test_case_filename,
-                        test_cases_generated: !!response.data.test_cases_generated,
-                        is_qa_approved: false // Always false
+                        test_case_filename: response.data.test_case_filename ?? existing?.test_case_filename,
+                        test_cases_generated: hasDetailFlag
+                            ? !!response.data.test_cases_generated
+                            : (existing?.test_cases_generated ?? false),
+                        is_qa_approved: false
                     };
 
-                    // Cache the detail
                     this.issueDetailsCache.set(issueKey, issueDetail);
                     this.selectedIssue = issueDetail;
 
-                    // Also update the issues array to prevent button flicker
                     const issueIndex = this.issues.findIndex(i => i.key === issueKey);
                     if (issueIndex !== -1) {
                         this.issues[issueIndex] = {
@@ -200,13 +201,17 @@ class IssueStore {
                 const response = await jiraApi.fetchIssueDetail(issue.key);
 
                 runInAction(() => {
-                    // Update the issue in the array with test plan status
                     const issueIndex = this.issues.findIndex(i => i.key === issue.key);
                     if (issueIndex !== -1) {
+                        const existing = this.issues[issueIndex];
+                        // Only overwrite test_cases_generated if the detail API explicitly provides it
+                        const hasDetailFlag = response.data.test_cases_generated !== undefined;
                         this.issues[issueIndex] = {
-                            ...this.issues[issueIndex],
-                            test_case_filename: response.data.test_case_filename,
-                            test_cases_generated: !!response.data.test_cases_generated,
+                            ...existing,
+                            test_case_filename: response.data.test_case_filename ?? existing.test_case_filename,
+                            test_cases_generated: hasDetailFlag
+                                ? !!response.data.test_cases_generated
+                                : existing.test_cases_generated,
                             is_qa_approved: false
                         };
                     }
@@ -214,12 +219,15 @@ class IssueStore {
                     // Also update cache
                     const detail = response.data?.issue;
                     if (detail) {
+                        const hasDetailFlag = response.data.test_cases_generated !== undefined;
                         this.issueDetailsCache.set(issue.key, {
                             key: issue.key,
                             summary: detail.summary || 'No Summary',
                             description: detail.description || 'No description',
-                            test_case_filename: response.data.test_case_filename,
-                            test_cases_generated: !!response.data.test_cases_generated,
+                            test_case_filename: response.data.test_case_filename ?? issue.test_case_filename,
+                            test_cases_generated: hasDetailFlag
+                                ? !!response.data.test_cases_generated
+                                : issue.test_cases_generated,
                             is_qa_approved: false
                         });
                     }
@@ -240,6 +248,7 @@ class IssueStore {
     async generateTestPlan(baseUrl: string) {
         if (!this.selectedIssue) return;
 
+        const issueKey = this.selectedIssue.key;
         this.isGeneratingPlan = true;
         this.generationMessage = null;
         this.error = null;
@@ -256,7 +265,40 @@ class IssueStore {
                 this.isGeneratingPlan = false;
                 this.generationMessage = response.data?.message || 'Test plan generated successfully!';
                 toast.success(this.generationMessage);
+
+                // Optimistically mark test plan as generated on selectedIssue
+                if (this.selectedIssue && this.selectedIssue.key === issueKey) {
+                    this.selectedIssue = {
+                        ...this.selectedIssue,
+                        test_cases_generated: true,
+                        test_case_filename: response.data?.test_case_filename ?? this.selectedIssue.test_case_filename,
+                    };
+                }
+
+                // Also update the issues list so the left pane tag shows immediately
+                const issueIndex = this.issues.findIndex(i => i.key === issueKey);
+                if (issueIndex !== -1) {
+                    this.issues[issueIndex] = {
+                        ...this.issues[issueIndex],
+                        test_cases_generated: true,
+                        test_case_filename: response.data?.test_case_filename ?? this.issues[issueIndex].test_case_filename,
+                    };
+                }
+
+                // Update cache as well
+                const cached = this.issueDetailsCache.get(issueKey);
+                if (cached) {
+                    this.issueDetailsCache.set(issueKey, {
+                        ...cached,
+                        test_cases_generated: true,
+                        test_case_filename: response.data?.test_case_filename ?? cached.test_case_filename,
+                    });
+                }
             });
+
+            // Re-fetch the issue detail to pick up the actual test_case_filename from backend
+            await this.fetchIssueDetail(issueKey);
+
             return response.data;
         } catch (err: any) {
             console.error('Generate test plan error:', err);
@@ -340,6 +382,35 @@ class IssueStore {
                     this.batchProcessingStatus.set(key, 'completed');
                     this.generatedPlans.set(key, JSON.stringify(genResponse.data, null, 2));
                     toast.success(`Test plan generated for ${key}`);
+
+                    // Optimistic update on issues list
+                    const issueIndex = this.issues.findIndex(i => i.key === key);
+                    if (issueIndex !== -1) {
+                        this.issues[issueIndex] = {
+                            ...this.issues[issueIndex],
+                            test_cases_generated: true,
+                            test_case_filename: genResponse.data?.test_case_filename ?? this.issues[issueIndex].test_case_filename,
+                        };
+                    }
+
+                    // Update cache
+                    const cached = this.issueDetailsCache.get(key);
+                    if (cached) {
+                        this.issueDetailsCache.set(key, {
+                            ...cached,
+                            test_cases_generated: true,
+                            test_case_filename: genResponse.data?.test_case_filename ?? cached.test_case_filename,
+                        });
+                    }
+
+                    // Update selectedIssue if it matches
+                    if (this.selectedIssue && this.selectedIssue.key === key) {
+                        this.selectedIssue = {
+                            ...this.selectedIssue,
+                            test_cases_generated: true,
+                            test_case_filename: genResponse.data?.test_case_filename ?? this.selectedIssue.test_case_filename,
+                        };
+                    }
                 });
             } catch (err: any) {
                 console.error(`Batch processing error for ${key}:`, err);
