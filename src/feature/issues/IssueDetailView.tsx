@@ -90,7 +90,7 @@ const IssueDetailView: React.FC = observer(() => {
                 <Stack spacing={3}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <Box>
-                            <Typography variant="caption" sx={{ color: '#0052CC', fontWeight: 700, mb: 0.5, display: 'block' }}>
+                            <Typography variant="caption" sx={{ color: '#5a1196', fontWeight: 700, mb: 0.5, display: 'block' }}>
                                 {storyLabel}
                             </Typography>
                             <Typography variant="h5" sx={{ fontWeight: 700, color: '#172B4D', lineHeight: 1.2 }}>
@@ -157,8 +157,8 @@ const IssueDetailView: React.FC = observer(() => {
                                                         handleOpenTestPlan(filename, qaApproved);
                                                     }}
                                                     sx={{
-                                                        bgcolor: '#36B37E',
-                                                        '&:hover': { bgcolor: '#2A9A6A' },
+                                                        bgcolor: '#5a1196',
+                                                        '&:hover': { bgcolor: '#660f89' },
                                                         textTransform: 'none',
                                                         fontWeight: 600,
                                                         fontSize: '11px',
@@ -205,8 +205,8 @@ const IssueDetailView: React.FC = observer(() => {
                                                         }
                                                     }}
                                                     sx={{
-                                                        bgcolor: '#0052CC',
-                                                        '&:hover': { bgcolor: '#0747A6' },
+                                                        bgcolor: '#3614b2',
+                                                        '&:hover': { bgcolor: '#4a12a4' },
                                                         textTransform: 'none',
                                                         fontWeight: 600,
                                                         fontSize: '11px',
@@ -256,7 +256,7 @@ const IssueDetailView: React.FC = observer(() => {
                                         startIcon={isProcessing ? <CircularProgress size={20} color="inherit" /> : <PlayArrowIcon />}
                                         onClick={() => issueStore.processBatch(baseUrl)}
                                         disabled={isProcessing}
-                                        sx={{ bgcolor: '#0052CC', '&:hover': { bgcolor: '#0747A6' }, textTransform: 'none', fontWeight: 600 }}
+                                        sx={{ bgcolor: '#3614b2', '&:hover': { bgcolor: '#4a12a4' }, textTransform: 'none', fontWeight: 600 }}
                                     >
                                         {isProcessing ? 'Generating...' : `Generate Test Plans (${pendingKeys.length})`}
                                     </Button>
@@ -301,7 +301,7 @@ const IssueDetailView: React.FC = observer(() => {
                                                 const qaApproved = issueStore.selectedIssue?.is_qa_approved || false;
                                                 handleOpenTestPlan(filename, qaApproved);
                                             }}
-                                            sx={{ bgcolor: '#36B37E', '&:hover': { bgcolor: '#2A9A6A' }, textTransform: 'none', fontWeight: 600 }}
+                                            sx={{ bgcolor: '#5a1196', '&:hover': { bgcolor: '#660f89' }, textTransform: 'none', fontWeight: 600 }}
                                         >
                                             View Test Plan
                                         </Button>
@@ -317,7 +317,7 @@ const IssueDetailView: React.FC = observer(() => {
                                             issueStore.generateTestPlan(baseUrl);
                                         }}
                                         disabled={isProcessing}
-                                        sx={{ bgcolor: '#0052CC', '&:hover': { bgcolor: '#0747A6' }, textTransform: 'none', fontWeight: 600 }}
+                                        sx={{ bgcolor: '#3614b2', '&:hover': { bgcolor: '#4a12a4' }, textTransform: 'none', fontWeight: 600 }}
                                     >
                                         {isProcessing ? 'Generating...' : 'Generate Test Plan'}
                                     </Button>
@@ -327,7 +327,7 @@ const IssueDetailView: React.FC = observer(() => {
                     )}
 
                     {issueStore.generationMessage && !isBatch && (
-                        <Typography variant="body2" sx={{ color: '#36B37E', fontWeight: 600, mt: 2 }}>
+                        <Typography variant="body2" sx={{ color: '#5a1196', fontWeight: 600, mt: 2 }}>
                             ✓ {issueStore.generationMessage}
                         </Typography>
                     )}

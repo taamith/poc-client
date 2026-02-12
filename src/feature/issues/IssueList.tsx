@@ -87,9 +87,9 @@ const IssueList: React.FC = observer(() => {
                                         py: 1.5,
                                         flexGrow: 1,
                                         '&.Mui-selected': {
-                                            bgcolor: 'rgba(0, 82, 204, 0.08)',
-                                            borderLeft: '3px solid #0052CC',
-                                            '&:hover': { bgcolor: 'rgba(0, 82, 204, 0.12)' }
+                                            bgcolor: 'rgba(54, 20, 178, 0.08)',
+                                            borderLeft: '3px solid #3614b2',
+                                            '&:hover': { bgcolor: 'rgba(54, 20, 178, 0.12)' }
                                         }
                                     }}
                                 >
@@ -116,8 +116,8 @@ const IssueList: React.FC = observer(() => {
                                                     mt: 0.5,
                                                     display: 'inline-flex',
                                                     alignItems: 'center',
-                                                    bgcolor: '#E3FCEF',
-                                                    color: '#006644',
+                                                    bgcolor: 'rgba(90, 17, 150, 0.1)',
+                                                    color: '#5a1196',
                                                     px: 1,
                                                     py: 0.25,
                                                     borderRadius: '3px',

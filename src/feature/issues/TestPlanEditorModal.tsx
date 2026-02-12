@@ -136,7 +136,7 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
                             sx={{
                                 px: 2,
                                 py: 0.5,
-                                bgcolor: '#36B37E',
+                                bgcolor: '#5a1196',
                                 color: 'white',
                                 borderRadius: '3px',
                                 fontSize: '12px',
@@ -222,9 +222,9 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
                         sx={{
                             textTransform: 'none',
                             fontWeight: 600,
-                            bgcolor: '#0052CC',
+                            bgcolor: '#3614b2',
                             '&:hover': {
-                                bgcolor: '#0747A6',
+                                bgcolor: '#4a12a4',
                             },
                         }}
                     >

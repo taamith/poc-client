@@ -353,18 +353,25 @@ class IssueStore {
         this.isGeneratingPlan = true;
         this.error = null;
 
-        for (const key of Array.from(this.selectedIssueKeys)) {
+        const keysToProcess = Array.from(this.selectedIssueKeys).filter(key => {
             const status = this.batchProcessingStatus.get(key);
-            if (status === 'completed') continue;
+            return status !== 'completed';
+        });
 
-            runInAction(() => {
+        // Mark all as processing immediately
+        runInAction(() => {
+            keysToProcess.forEach(key => {
                 this.batchProcessingStatus.set(key, 'processing');
             });
+        });
 
+        // Run all generations in parallel
+        const promises = keysToProcess.map(async (key) => {
             try {
                 let description = '';
-                if (this.selectedIssue?.key === key) {
-                    description = this.selectedIssue.description;
+                const cached = this.issueDetailsCache.get(key);
+                if (cached) {
+                    description = cached.description;
                 } else {
                     const detailResponse = await jiraApi.fetchIssueDetail(key);
                     description = detailResponse.data?.issue?.description || '';
@@ -374,7 +381,7 @@ class IssueStore {
 
                 const genResponse = await jiraApi.generateTestPlan({
                     summary: summary,
-                    user_story: description,
+                    user_story: description || summary,
                     base_url: baseUrl
                 });
 
@@ -394,12 +401,12 @@ class IssueStore {
                     }
 
                     // Update cache
-                    const cached = this.issueDetailsCache.get(key);
-                    if (cached) {
+                    const cachedDetail = this.issueDetailsCache.get(key);
+                    if (cachedDetail) {
                         this.issueDetailsCache.set(key, {
-                            ...cached,
+                            ...cachedDetail,
                             test_cases_generated: true,
-                            test_case_filename: genResponse.data?.test_case_filename ?? cached.test_case_filename,
+                            test_case_filename: genResponse.data?.test_case_filename ?? cachedDetail.test_case_filename,
                         });
                     }
 
@@ -419,7 +426,9 @@ class IssueStore {
                     toast.error(`Failed to generate test plan for ${key}`);
                 });
             }
-        }
+        });
+
+        await Promise.all(promises);
 
         runInAction(() => {
             this.isGeneratingPlan = false;
