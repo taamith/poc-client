@@ -9,7 +9,6 @@ import SearchIcon from '@mui/icons-material/Search';
 import LockIcon from '@mui/icons-material/Lock';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import StarIcon from '@mui/icons-material/Star';
 import { jiraApi } from '../../lib/api/jira';
 import { issueStore } from '../../app/store/issueStore';
 
@@ -18,11 +17,12 @@ interface Provider {
     name: string;
     description: string;
     icon: string;
-    popular: boolean;
 }
 
 const providers: Provider[] = [
-    { id: 'jira', name: 'Jira', description: 'Project Management', icon: '📋', popular: true },
+    { id: 'jira', name: 'Jira', description: 'Project Management', icon: '📋' },
+    { id: 'azure-devops', name: 'Azure DevOps', description: 'DevOps & CI/CD', icon: '🔷' },
+    { id: 'servicenow', name: 'ServiceNow', description: 'IT Service Management', icon: '🟢' },
 ];
 
 const LoginView: React.FC = observer(() => {
@@ -32,6 +32,13 @@ const LoginView: React.FC = observer(() => {
     const [searchQuery, setSearchQuery] = useState('');
     const searchRef = useRef<HTMLInputElement>(null);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        // If already authenticated (e.g. session still valid), skip login
+        if (issueStore.isAuthenticated) {
+            navigate('/issues', { replace: true });
+        }
+    }, [issueStore.isAuthenticated, navigate]);
 
     useEffect(() => {
         if (dropdownOpen && searchRef.current) {
@@ -120,9 +127,7 @@ const LoginView: React.FC = observer(() => {
                 }}
             >
                 <Stack spacing={3} alignItems="center" textAlign="center">
-                    {/* Rocket Logo */}
-                    <Box sx={{ fontSize: '4rem', lineHeight: 1 }}>🚀</Box>
-
+                    
                     {/* Brand Name */}
                     <Box>
                         <Typography
@@ -251,19 +256,6 @@ const LoginView: React.FC = observer(() => {
                                             />
                                         </Box>
 
-                                        {/* Popular Providers Section */}
-                                        <Box sx={{ px: 1.5, pb: 0.5 }}>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-                                                <StarIcon sx={{ color: '#F5A623', fontSize: 16 }} />
-                                                <Typography
-                                                    variant="caption"
-                                                    sx={{ fontWeight: 700, color: '#42526E', letterSpacing: '0.05em', textTransform: 'uppercase' }}
-                                                >
-                                                    Popular Providers
-                                                </Typography>
-                                            </Box>
-                                        </Box>
-
                                         {/* Provider List */}
                                         {filteredProviders.map((provider) => (
                                             <Box
@@ -301,22 +293,6 @@ const LoginView: React.FC = observer(() => {
                                                         </Typography>
                                                     </Box>
                                                 </Box>
-                                                {provider.popular && (
-                                                    <Box
-                                                        sx={{
-                                                            bgcolor: '#4a12a4',
-                                                            color: '#fff',
-                                                            fontSize: '0.65rem',
-                                                            fontWeight: 700,
-                                                            px: 1,
-                                                            py: 0.3,
-                                                            borderRadius: '4px',
-                                                            textTransform: 'capitalize',
-                                                        }}
-                                                    >
-                                                        Popular
-                                                    </Box>
-                                                )}
                                             </Box>
                                         ))}
 

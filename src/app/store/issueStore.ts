@@ -24,6 +24,7 @@ class IssueStore {
     loading: boolean = false;
     error: string | null = null;
     isAuthenticated: boolean = false;
+    authChecked: boolean = false;
     isGeneratingPlan: boolean = false;
     generationMessage: string | null = null;
 
@@ -39,28 +40,25 @@ class IssueStore {
 
         try {
             const response = await jiraApi.fetchIssues();
+            console.log('fetchIssues raw response:', JSON.stringify(response.data, null, 2));
 
             // Handle the observed nested response structure: { issues: { issues: [...] } }
             const nestedIssues = response.data?.issues?.issues;
             const directIssues = response.data?.issues;
 
+            const mapIssue = (i: any): JiraIssue => ({
+                key: i.key,
+                summary: i.fields?.summary || i.summary || i.name || 'No Summary',
+                test_case_filename: i.test_case_filename || i.fields?.test_case_filename,
+                test_cases_generated: i.test_cases_generated ?? i.fields?.test_cases_generated ?? false,
+                is_qa_approved: false
+            });
+
             runInAction(() => {
                 if (Array.isArray(nestedIssues)) {
-                    this.issues = nestedIssues.map((i: any) => ({
-                        key: i.key,
-                        summary: i.fields?.summary || i.summary || 'No Summary',
-                        test_case_filename: i.test_case_filename || i.fields?.test_case_filename,
-                        test_cases_generated: i.test_cases_generated ?? i.fields?.test_cases_generated ?? false,
-                        is_qa_approved: false // Always false for now
-                    }));
+                    this.issues = nestedIssues.map(mapIssue);
                 } else if (Array.isArray(directIssues)) {
-                    this.issues = directIssues.map((i: any) => ({
-                        key: i.key,
-                        summary: i.summary || 'No Summary',
-                        test_case_filename: i.test_case_filename,
-                        test_cases_generated: i.test_cases_generated ?? false,
-                        is_qa_approved: false
-                    }));
+                    this.issues = directIssues.map(mapIssue);
                 } else if (response.data?.error) {
                     // If the backend returns an error with 200 (sometimes seen)
                     if (!silent) this.error = response.data.error;
@@ -73,20 +71,11 @@ class IssueStore {
 
                 if (!silent) this.loading = false;
                 this.isAuthenticated = true;
+                this.authChecked = true;
 
                 // Only clear error if we actually got issues or a truly successful response
                 if (this.issues.length > 0) {
                     this.error = null;
-                    // Auto-select the first issue if none is selected
-                    if (!this.selectedIssue && this.issues.length > 0) {
-                        const firstIssue = this.issues[0];
-                        this.fetchIssueDetail(firstIssue.key);
-                        // Also check it by default
-                        this.selectedIssueKeys.add(firstIssue.key);
-                        const initialStatus = firstIssue.test_cases_generated ? 'completed' : 'pending';
-                        this.batchProcessingStatus.set(firstIssue.key, initialStatus);
-                    }
-
                     // Prefetch test plan status for all issues to eliminate button lag
                     this.prefetchTestPlanStatus();
                 }
@@ -98,6 +87,7 @@ class IssueStore {
             }
             runInAction(() => {
                 this.issues = [];
+                this.authChecked = true;
                 if (!silent) {
                     this.loading = false;
                     this.isAuthenticated = false;
@@ -116,8 +106,21 @@ class IssueStore {
 
     async fetchIssueDetail(issueKey: string) {
         this.loading = true;
-        // Don't clear global error here, it might be showing important auth info
-        // Only clear if we are starting a fresh fetch
+
+        // Immediately set selectedIssue from cache or list so the UI reflects the correct issue
+        const cached = this.issueDetailsCache.get(issueKey);
+        if (cached) {
+            this.selectedIssue = cached;
+        } else {
+            const listIssue = this.issues.find(i => i.key === issueKey);
+            if (listIssue) {
+                this.selectedIssue = {
+                    ...listIssue,
+                    description: 'Loading...',
+                };
+            }
+        }
+
         try {
             const response = await jiraApi.fetchIssueDetail(issueKey);
 

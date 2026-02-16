@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { ThemeProvider, CssBaseline, Container, Box } from '@mui/material';
+import { ThemeProvider, CssBaseline, Container, Box, CircularProgress } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
@@ -19,10 +19,20 @@ const IssuesPage = observer(() => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!issueStore.isAuthenticated) {
+    // Only redirect after auth check has completed
+    if (issueStore.authChecked && !issueStore.isAuthenticated) {
       navigate('/login', { replace: true });
     }
-  }, [issueStore.isAuthenticated, navigate]);
+  }, [issueStore.authChecked, issueStore.isAuthenticated, navigate]);
+
+  // Show loading while auth check is in progress
+  if (!issueStore.authChecked) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   if (!issueStore.isAuthenticated) return null;
 
@@ -61,16 +71,10 @@ const IssuesPage = observer(() => {
 });
 
 const App = observer(() => {
-  const navigate = useNavigate();
-
   useEffect(() => {
     // On initial load, check if already authenticated (e.g. session still valid)
-    issueStore.fetchIssues(true).then((success) => {
-      if (success) {
-        navigate('/issues', { replace: true });
-      }
-    });
-  }, [navigate]);
+    issueStore.fetchIssues(true);
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
