@@ -13,13 +13,14 @@ const Header = observer(() => {
         setIsDisconnecting(true);
         try {
             await jiraApi.disconnect();
-            issueStore.setAuthenticated(false);
-            issueStore.clearSelectedIssue();
-            navigate('/login', { replace: true });
         } catch (err) {
             console.error('Failed to disconnect', err);
         } finally {
+            issueStore.setAuthenticated(false);
+            issueStore.authChecked = false;
+            issueStore.clearSelectedIssue();
             setIsDisconnecting(false);
+            navigate('/login', { replace: true });
         }
     };
 
