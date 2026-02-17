@@ -48,7 +48,7 @@ export const testPlanApi = {
                 plan: planContent,
             },
         };
-        const response = await testPlanApiClient.post<UpdateTestPlanResponse>(url, payload);
+        const response = await testPlanApiClient.put<UpdateTestPlanResponse>(url, payload);
         return response.data;
     },
 };

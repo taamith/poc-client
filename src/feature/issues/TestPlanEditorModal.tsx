@@ -9,10 +9,15 @@ import {
     Box,
     Typography,
     Alert,
-    TextField
+    TextField,
 } from '@mui/material';
 import { testPlanApi } from '../../lib/api/testPlanApi';
 import { toast } from 'sonner';
+import {
+    extractTestPlanJson,
+    jsonToReadableText,
+    readableTextToJson,
+} from '../../lib/utils/testPlanFormatter';
 
 interface TestPlanEditorModalProps {
     open: boolean;
@@ -31,15 +36,17 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
     const [loading, setLoading] = useState<boolean>(false);
     const [saving, setSaving] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
+    // Track whether the fetched content was structured JSON (so we can convert back on save)
+    const [isStructuredJson, setIsStructuredJson] = useState<boolean>(false);
 
     useEffect(() => {
         if (open && filename) {
             fetchTestPlan();
         } else if (!open) {
-            // Reset content when modal closes
             setContent('');
             setError(null);
             setLoading(false);
+            setIsStructuredJson(false);
         }
     }, [open, filename]);
 
@@ -51,26 +58,30 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
 
         try {
             const response = await testPlanApi.fetchTestPlan(filename);
-            console.log('📦 API Response:', response);
 
-            let planText = '';
+            // Try to parse as structured test plan JSON
+            const testPlanJson = extractTestPlanJson(response.content);
 
-            // Determine if content is a string or already parsed object
-            if (typeof response.content === 'string') {
-                try {
-                    const contentObj = JSON.parse(response.content);
-                    planText = contentObj.plan || response.content;
-                } catch (e) {
-                    console.warn('⚠️ Content is a string but not valid JSON, using as is');
-                    planText = response.content;
-                }
-            } else if (response.content && typeof response.content === 'object') {
-                planText = (response.content as any).plan || JSON.stringify(response.content, null, 2);
+            if (testPlanJson) {
+                // Convert JSON → readable plain text for display/editing
+                setContent(jsonToReadableText(testPlanJson));
+                setIsStructuredJson(true);
             } else {
-                planText = 'No content found in test plan.';
+                // Fallback: extract raw text
+                let raw: any = response.content;
+                if (typeof raw === 'string') {
+                    try {
+                        const parsed = JSON.parse(raw);
+                        raw = parsed.plan || JSON.stringify(parsed, null, 2);
+                    } catch {
+                        // use as-is
+                    }
+                } else if (raw && typeof raw === 'object') {
+                    raw = (raw as any).plan || JSON.stringify(raw, null, 2);
+                }
+                setContent(String(raw));
+                setIsStructuredJson(false);
             }
-
-            setContent(planText);
         } catch (err: any) {
             console.error('Error fetching test plan:', err);
             const errorMsg = err.response?.data?.message || err.message || 'Failed to load test plan';
@@ -88,7 +99,17 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
         setError(null);
 
         try {
-            const response = await testPlanApi.updateTestPlan(filename, content);
+            let planPayload: string;
+
+            if (isStructuredJson) {
+                // Convert readable plain text back → JSON, then stringify for the API
+                const jsonObj = readableTextToJson(content);
+                planPayload = JSON.stringify(jsonObj);
+            } else {
+                planPayload = content;
+            }
+
+            const response = await testPlanApi.updateTestPlan(filename, planPayload);
             toast.success(response.message || 'Test plan saved successfully');
             onClose();
         } catch (err: any) {
@@ -102,15 +123,10 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
     };
 
     const handleClose = () => {
-        console.log('🔴 Modal handleClose called');
         setContent('');
         setError(null);
-        console.log('🔴 Calling onClose callback...');
         onClose();
-        console.log('🔴 Modal close complete');
     };
-
-
 
     return (
         <Dialog
@@ -129,7 +145,7 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
             <DialogTitle sx={{ bgcolor: '#F4F5F7', borderBottom: '2px solid #DFE1E6', pb: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Typography variant="h6" sx={{ fontWeight: 700, color: '#172B4D' }}>
-                        {isQaApproved ? '📋 View Test Plan (Read-Only)' : '✏️ Edit Test Plan'}
+                        {isQaApproved ? 'View Test Plan (Read-Only)' : 'Edit Test Plan'}
                     </Typography>
                     {isQaApproved && (
                         <Box
@@ -143,7 +159,7 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
                                 fontWeight: 700,
                             }}
                         >
-                            ✓ QA APPROVED
+                            QA APPROVED
                         </Box>
                     )}
                 </Box>
@@ -175,20 +191,23 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
                         <TextField
                             multiline
                             fullWidth
-                            rows={15}
+                            minRows={18}
+                            maxRows={30}
                             variant="outlined"
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
                             InputProps={{
                                 readOnly: isQaApproved,
                                 sx: {
-                                    fontFamily: 'monospace',
+                                    fontFamily: '"Segoe UI", Roboto, sans-serif',
                                     fontSize: '14px',
+                                    lineHeight: 1.7,
                                     backgroundColor: isQaApproved ? '#F4F5F7' : 'white',
                                     '& .MuiInputBase-input': {
-                                        padding: '10px',
-                                    }
-                                }
+                                        padding: '16px',
+                                        whiteSpace: 'pre-wrap',
+                                    },
+                                },
                             }}
                             placeholder="Loading test plan content..."
                         />

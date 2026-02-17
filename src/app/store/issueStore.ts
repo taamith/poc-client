@@ -299,7 +299,8 @@ class IssueStore {
                 }
             });
 
-            // Re-fetch the issue detail to pick up the actual test_case_filename from backend
+            // Re-fetch issues list and issue detail so Edit picks up the correct filename
+            await this.fetchIssues(true);
             await this.fetchIssueDetail(issueKey);
 
             return response.data;
@@ -432,6 +433,9 @@ class IssueStore {
         });
 
         await Promise.all(promises);
+
+        // Re-fetch issues list so Edit picks up correct filenames
+        await this.fetchIssues(true);
 
         runInAction(() => {
             this.isGeneratingPlan = false;

@@ -58,7 +58,11 @@ const Header = observer(() => {
             <Container maxWidth="xl">
                 <Toolbar disableGutters sx={{ minHeight: 56 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1, gap: 1.5 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1rem', color: '#172B4D' }}>
+                        <Typography
+                            variant="h6"
+                            onClick={() => window.location.reload()}
+                            sx={{ fontWeight: 600, fontSize: '1rem', color: '#172B4D', cursor: 'pointer', userSelect: 'none' }}
+                        >
                             AutoSprint AI
                         </Typography>
                     </Box>

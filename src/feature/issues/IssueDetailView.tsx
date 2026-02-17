@@ -13,8 +13,14 @@ import {
 } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import EditIcon from '@mui/icons-material/Edit';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { issueStore } from '../../app/store/issueStore';
 import TestPlanEditorModal from './TestPlanEditorModal';
+import FileUploadModal from './FileUploadModal';
+
+const BASE_URL = 'https://bscsolutionsinc-dev-ed.develop.lightning.force.com/lightning/page/home';
 
 const IssueDetailView: React.FC = observer(() => {
 
@@ -23,6 +29,24 @@ const IssueDetailView: React.FC = observer(() => {
     const issue = issueStore.selectedIssue;
     const selectedCount = issueStore.selectedIssueKeys.size;
     const isBatch = selectedCount > 1;
+
+    // Navigation for multi-select
+    const selectedKeysArray = Array.from(issueStore.selectedIssueKeys);
+    const currentIndex = issue ? selectedKeysArray.indexOf(issue.key) : -1;
+    const hasPrev = isBatch && currentIndex > 0;
+    const hasNext = isBatch && currentIndex < selectedKeysArray.length - 1;
+
+    const handlePrev = () => {
+        if (hasPrev) {
+            issueStore.fetchIssueDetail(selectedKeysArray[currentIndex - 1]);
+        }
+    };
+
+    const handleNext = () => {
+        if (hasNext) {
+            issueStore.fetchIssueDetail(selectedKeysArray[currentIndex + 1]);
+        }
+    };
 
     // Test Plan Editor Modal state
     const [modalOpen, setModalOpen] = React.useState<boolean>(false);
@@ -39,6 +63,34 @@ const IssueDetailView: React.FC = observer(() => {
         setModalOpen(false);
         setSelectedFilename(null);
         setIsQaApproved(false);
+    };
+
+    // File Upload Modal state
+    const [uploadModalOpen, setUploadModalOpen] = React.useState(false);
+    const [pendingGenerateMode, setPendingGenerateMode] = React.useState<'single' | 'batch'>('single');
+
+    const handleGenerateClick = () => {
+        setPendingGenerateMode('single');
+        setUploadModalOpen(true);
+    };
+
+    const handleGenerateAllClick = () => {
+        setPendingGenerateMode('batch');
+        setUploadModalOpen(true);
+    };
+
+    const handleUploadComplete = () => {
+        setUploadModalOpen(false);
+        // Proceed with generation after upload completes or user skips
+        if (pendingGenerateMode === 'batch') {
+            issueStore.processBatch(BASE_URL);
+        } else {
+            issueStore.generateTestPlan(BASE_URL);
+        }
+    };
+
+    const handleUploadCancel = () => {
+        setUploadModalOpen(false);
     };
 
     if (selectedCount === 0 && !isLoading) {
@@ -95,66 +147,48 @@ const IssueDetailView: React.FC = observer(() => {
                             </Typography>
                         </Box>
 
-                        {/* Generate / View button in top-right */}
-                        {(() => {
-                            const baseUrl = 'https://bscsolutionsinc-dev-ed.develop.lightning.force.com/lightning/page/home';
-
-                            if (isBatch) {
-                                const pendingKeys = Array.from(issueStore.selectedIssueKeys).filter((key) => {
-                                    const cachedDetail = issueStore.issueDetailsCache.get(key);
-                                    const listIssue = issueStore.issues.find(i => i.key === key);
-                                    const issue = cachedDetail || listIssue;
-                                    return !issue?.test_cases_generated;
-                                });
-                                const allGenerated = pendingKeys.length === 0;
-
-                                if (!allGenerated) {
-                                    return (
-                                        <Button
-                                            variant="contained"
-                                            startIcon={isProcessing ? <CircularProgress size={20} color="inherit" /> : <PlayArrowIcon />}
-                                            onClick={() => issueStore.processBatch(baseUrl)}
-                                            disabled={isProcessing}
-                                            sx={{ bgcolor: '#3614b2', '&:hover': { bgcolor: '#4a12a4' }, textTransform: 'none', fontWeight: 600, flexShrink: 0 }}
-                                        >
-                                            {isProcessing ? 'Generating...' : `Generate Test Plans (${pendingKeys.length})`}
-                                        </Button>
-                                    );
-                                }
-                                return null;
-                            }
-
-                            const allHaveTestPlans = !!issueStore.selectedIssue?.test_cases_generated;
-
-                            if (allHaveTestPlans && selectedCount > 0) {
-                                return (
-                                    <Button
-                                        variant="contained"
-                                        startIcon={<VisibilityIcon />}
-                                        onClick={() => {
-                                            const filename = issueStore.selectedIssue?.test_case_filename || '';
-                                            const qaApproved = issueStore.selectedIssue?.is_qa_approved || false;
-                                            handleOpenTestPlan(filename, qaApproved);
-                                        }}
-                                        sx={{ bgcolor: '#5a1196', '&:hover': { bgcolor: '#660f89' }, textTransform: 'none', fontWeight: 600, flexShrink: 0 }}
-                                    >
-                                        View Test Plan
-                                    </Button>
-                                );
-                            }
-
-                            return (
+                        {/* Action buttons in top-right */}
+                        <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
+                            {/* Current issue action: View/Edit or Generate */}
+                            {issue?.test_cases_generated ? (
                                 <Button
                                     variant="contained"
-                                    startIcon={isProcessing ? <CircularProgress size={20} color="inherit" /> : <PlayArrowIcon />}
-                                    onClick={() => issueStore.generateTestPlan(baseUrl)}
-                                    disabled={isProcessing}
-                                    sx={{ bgcolor: '#3614b2', '&:hover': { bgcolor: '#4a12a4' }, textTransform: 'none', fontWeight: 600, flexShrink: 0 }}
+                                    size="small"
+                                    startIcon={issue.is_qa_approved ? <VisibilityIcon /> : <EditIcon />}
+                                    onClick={() => {
+                                        handleOpenTestPlan(issue.test_case_filename || '', issue.is_qa_approved || false);
+                                    }}
+                                    sx={{ bgcolor: '#5a1196', '&:hover': { bgcolor: '#660f89' }, textTransform: 'none', fontWeight: 600 }}
                                 >
-                                    {isProcessing ? 'Generating...' : 'Generate Test Plan'}
+                                    {issue.is_qa_approved ? 'View' : 'Edit'}
                                 </Button>
-                            );
-                        })()}
+                            ) : (
+                                <Button
+                                    variant="contained"
+                                    size="small"
+                                    startIcon={isProcessing ? <CircularProgress size={18} color="inherit" /> : <PlayArrowIcon />}
+                                    onClick={handleGenerateClick}
+                                    disabled={isProcessing}
+                                    sx={{ bgcolor: '#3614b2', '&:hover': { bgcolor: '#4a12a4' }, textTransform: 'none', fontWeight: 600 }}
+                                >
+                                    {isProcessing ? 'Generating...' : 'Generate'}
+                                </Button>
+                            )}
+
+                            {/* Batch generate for all pending (multi-select only) */}
+                            {isBatch && pendingCount > 0 && (
+                                <Button
+                                    variant="contained"
+                                    size="small"
+                                    startIcon={isProcessing ? <CircularProgress size={18} color="inherit" /> : <PlayArrowIcon />}
+                                    onClick={handleGenerateAllClick}
+                                    disabled={isProcessing}
+                                    sx={{ bgcolor: '#172B4D', '&:hover': { bgcolor: '#253858' }, textTransform: 'none', fontWeight: 600 }}
+                                >
+                                    {isProcessing ? 'Generating...' : `Generate All (${pendingCount})`}
+                                </Button>
+                            )}
+                        </Box>
                     </Box>
 
                     <Divider />
@@ -174,17 +208,44 @@ const IssueDetailView: React.FC = observer(() => {
 
                     {issueStore.generationMessage && !isBatch && (
                         <Typography variant="body2" sx={{ color: '#5a1196', fontWeight: 600, mt: 2 }}>
-                            ✓ {issueStore.generationMessage}
+                            {issueStore.generationMessage}
                         </Typography>
                     )}
 
                     {issueStore.error && (
                         <Typography variant="body2" sx={{ color: '#FF5630', fontWeight: 600, mt: 2 }}>
-                            ⚠ {issueStore.error}
+                            {issueStore.error}
                         </Typography>
                     )}
                 </Stack>
             </CardContent>
+
+            {/* Prev / Next navigation for multi-select */}
+            {isBatch && (
+                <Box sx={{ position: 'absolute', bottom: 16, right: 16, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="caption" sx={{ color: '#6B778C', fontWeight: 600, mr: 0.5 }}>
+                        {currentIndex + 1} / {selectedKeysArray.length}
+                    </Typography>
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={handlePrev}
+                        disabled={!hasPrev}
+                        sx={{ minWidth: 36, px: 0, borderColor: '#DFE1E6', color: '#5a1196', '&:hover': { borderColor: '#5a1196' } }}
+                    >
+                        <ChevronLeftIcon />
+                    </Button>
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={handleNext}
+                        disabled={!hasNext}
+                        sx={{ minWidth: 36, px: 0, borderColor: '#DFE1E6', color: '#5a1196', '&:hover': { borderColor: '#5a1196' } }}
+                    >
+                        <ChevronRightIcon />
+                    </Button>
+                </Box>
+            )}
 
             {/* Test Plan Editor Modal */}
             <TestPlanEditorModal
@@ -192,6 +253,13 @@ const IssueDetailView: React.FC = observer(() => {
                 onClose={handleCloseModal}
                 filename={selectedFilename}
                 isQaApproved={isQaApproved}
+            />
+
+            {/* File Upload Modal — shown before generating */}
+            <FileUploadModal
+                open={uploadModalOpen}
+                onClose={handleUploadCancel}
+                onProceed={handleUploadComplete}
             />
         </Card >
     );
