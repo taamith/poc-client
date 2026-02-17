@@ -449,6 +449,12 @@ class IssueStore {
     clearSelectedIssue() {
         this.selectedIssue = null;
         this.generationMessage = null;
+        this.selectedIssueKeys.clear();
+        this.batchProcessingStatus.clear();
+        this.generatedPlans.clear();
+        this.issueDetailsCache.clear();
+        this.issues = [];
+        this.error = null;
     }
 }
 

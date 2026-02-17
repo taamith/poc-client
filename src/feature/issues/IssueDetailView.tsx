@@ -9,18 +9,41 @@ import {
     Divider,
     Stack,
     Button,
-    Backdrop
+    Backdrop,
+    Paper,
+    ClickAwayListener,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
 } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { issueStore } from '../../app/store/issueStore';
+import { testPlanApi } from '../../lib/api/testPlanApi';
+import { toast } from 'sonner';
 import TestPlanEditorModal from './TestPlanEditorModal';
 import FileUploadModal from './FileUploadModal';
 
 const BASE_URL = 'https://bscsolutionsinc-dev-ed.develop.lightning.force.com/lightning/page/home';
+
+interface PublishTool {
+    id: string;
+    name: string;
+    icon: string;
+}
+
+const publishTools: PublishTool[] = [
+    { id: 'confluence', name: 'Confluence', icon: '📘' },
+    { id: 'sharepoint', name: 'SharePoint', icon: '📄' },
+    { id: 'notion', name: 'Notion', icon: '📝' },
+    { id: 'google-docs', name: 'Google Docs', icon: '📑' },
+];
 
 const IssueDetailView: React.FC = observer(() => {
 
@@ -81,7 +104,6 @@ const IssueDetailView: React.FC = observer(() => {
 
     const handleUploadComplete = () => {
         setUploadModalOpen(false);
-        // Proceed with generation after upload completes or user skips
         if (pendingGenerateMode === 'batch') {
             issueStore.processBatch(BASE_URL);
         } else {
@@ -91,6 +113,41 @@ const IssueDetailView: React.FC = observer(() => {
 
     const handleUploadCancel = () => {
         setUploadModalOpen(false);
+    };
+
+    // Publish dropdown state
+    const [publishDropdownOpen, setPublishDropdownOpen] = React.useState(false);
+    const [confirmDialogOpen, setConfirmDialogOpen] = React.useState(false);
+    const [selectedTool, setSelectedTool] = React.useState<PublishTool | null>(null);
+    const [isPublishing, setIsPublishing] = React.useState(false);
+
+    const handleToolSelect = (tool: PublishTool) => {
+        setPublishDropdownOpen(false);
+        setSelectedTool(tool);
+        setConfirmDialogOpen(true);
+    };
+
+    const handleConfirmPublish = async () => {
+        if (!issue?.test_case_filename || !selectedTool) return;
+
+        setIsPublishing(true);
+        try {
+            const response = await testPlanApi.publishTestPlan(issue.test_case_filename);
+            toast.success(response.message || `Test plan published to ${selectedTool.name} successfully`);
+            setConfirmDialogOpen(false);
+            setSelectedTool(null);
+        } catch (err: any) {
+            console.error('Publish error:', err);
+            const errorMsg = err.response?.data?.message || err.message || `Failed to publish to ${selectedTool.name}`;
+            toast.error(errorMsg);
+        } finally {
+            setIsPublishing(false);
+        }
+    };
+
+    const handleCancelPublish = () => {
+        setConfirmDialogOpen(false);
+        setSelectedTool(null);
     };
 
     if (selectedCount === 0 && !isLoading) {
@@ -117,6 +174,8 @@ const IssueDetailView: React.FC = observer(() => {
         if (readyCount > 0) parts.push(`${readyCount} ready to view`);
         storyLabel += ` (${parts.join(', ')})`;
     }
+
+    const hasTestPlan = !!issue?.test_cases_generated;
 
     return (
         <Card sx={{ height: '100%', borderRadius: '3px', position: 'relative' }}>
@@ -148,19 +207,31 @@ const IssueDetailView: React.FC = observer(() => {
                         </Box>
 
                         {/* Action buttons in top-right */}
-                        <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
+                        <Box sx={{ display: 'flex', gap: 1, flexShrink: 0, alignItems: 'center' }}>
                             {/* Current issue action: View/Edit or Generate */}
-                            {issue?.test_cases_generated ? (
+                            {hasTestPlan ? (
                                 <Button
                                     variant="contained"
                                     size="small"
-                                    startIcon={issue.is_qa_approved ? <VisibilityIcon /> : <EditIcon />}
+                                    startIcon={issue!.is_qa_approved ? <VisibilityIcon /> : <EditIcon />}
                                     onClick={() => {
-                                        handleOpenTestPlan(issue.test_case_filename || '', issue.is_qa_approved || false);
+                                        handleOpenTestPlan(issue!.test_case_filename || '', issue!.is_qa_approved || false);
                                     }}
                                     sx={{ bgcolor: '#5a1196', '&:hover': { bgcolor: '#660f89' }, textTransform: 'none', fontWeight: 600 }}
                                 >
-                                    {issue.is_qa_approved ? 'View' : 'Edit'}
+                                    {issue!.is_qa_approved ? 'View' : 'Edit'}
+                                </Button>
+                            ) : isBatch && pendingCount > 0 ? (
+                                /* Batch generate — shown instead of single Generate when multiple issues selected */
+                                <Button
+                                    variant="contained"
+                                    size="small"
+                                    startIcon={isProcessing ? <CircularProgress size={18} color="inherit" /> : <PlayArrowIcon />}
+                                    onClick={handleGenerateAllClick}
+                                    disabled={isProcessing}
+                                    sx={{ bgcolor: '#172B4D', '&:hover': { bgcolor: '#253858' }, textTransform: 'none', fontWeight: 600 }}
+                                >
+                                    {isProcessing ? 'Generating...' : `Generate All (${pendingCount})`}
                                 </Button>
                             ) : (
                                 <Button
@@ -175,18 +246,79 @@ const IssueDetailView: React.FC = observer(() => {
                                 </Button>
                             )}
 
-                            {/* Batch generate for all pending (multi-select only) */}
-                            {isBatch && pendingCount > 0 && (
-                                <Button
-                                    variant="contained"
-                                    size="small"
-                                    startIcon={isProcessing ? <CircularProgress size={18} color="inherit" /> : <PlayArrowIcon />}
-                                    onClick={handleGenerateAllClick}
-                                    disabled={isProcessing}
-                                    sx={{ bgcolor: '#172B4D', '&:hover': { bgcolor: '#253858' }, textTransform: 'none', fontWeight: 600 }}
-                                >
-                                    {isProcessing ? 'Generating...' : `Generate All (${pendingCount})`}
-                                </Button>
+                            {/* Publish To dropdown — only shown when test plan exists */}
+                            {hasTestPlan && (
+                                <ClickAwayListener onClickAway={() => setPublishDropdownOpen(false)}>
+                                    <Box sx={{ position: 'relative' }}>
+                                        <Button
+                                            variant="outlined"
+                                            size="small"
+                                            onClick={() => setPublishDropdownOpen(!publishDropdownOpen)}
+                                            endIcon={publishDropdownOpen ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+                                            sx={{
+                                                textTransform: 'none',
+                                                fontWeight: 600,
+                                                borderColor: '#5a1196',
+                                                color: '#5a1196',
+                                                '&:hover': { borderColor: '#4a0e80', bgcolor: 'rgba(90,17,150,0.04)' },
+                                            }}
+                                        >
+                                            Publish To
+                                        </Button>
+
+                                        {publishDropdownOpen && (
+                                            <Paper
+                                                elevation={4}
+                                                sx={{
+                                                    position: 'absolute',
+                                                    top: '100%',
+                                                    right: 0,
+                                                    mt: 0.5,
+                                                    borderRadius: '10px',
+                                                    border: '1px solid #DFE1E6',
+                                                    zIndex: 10,
+                                                    overflow: 'hidden',
+                                                    minWidth: 220,
+                                                }}
+                                            >
+                                                {publishTools.map((tool) => (
+                                                    <Box
+                                                        key={tool.id}
+                                                        onClick={() => handleToolSelect(tool)}
+                                                        sx={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: 1.5,
+                                                            px: 1.5,
+                                                            py: 1.2,
+                                                            cursor: 'pointer',
+                                                            transition: 'background-color 0.15s',
+                                                            '&:hover': { bgcolor: '#F4F5F7' },
+                                                        }}
+                                                    >
+                                                        <Box
+                                                            sx={{
+                                                                width: 36,
+                                                                height: 36,
+                                                                borderRadius: '8px',
+                                                                bgcolor: '#E8F0FE',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                fontSize: '1.2rem',
+                                                            }}
+                                                        >
+                                                            {tool.icon}
+                                                        </Box>
+                                                        <Typography variant="body2" sx={{ fontWeight: 600, color: '#172B4D' }}>
+                                                            {tool.name}
+                                                        </Typography>
+                                                    </Box>
+                                                ))}
+                                            </Paper>
+                                        )}
+                                    </Box>
+                                </ClickAwayListener>
                             )}
                         </Box>
                     </Box>
@@ -203,8 +335,6 @@ const IssueDetailView: React.FC = observer(() => {
                             </Typography>
                         </Box>
                     )}
-
-
 
                     {issueStore.generationMessage && !isBatch && (
                         <Typography variant="body2" sx={{ color: '#5a1196', fontWeight: 600, mt: 2 }}>
@@ -261,6 +391,84 @@ const IssueDetailView: React.FC = observer(() => {
                 onClose={handleUploadCancel}
                 onProceed={handleUploadComplete}
             />
+
+            {/* Publish Confirmation Dialog */}
+            <Dialog
+                open={confirmDialogOpen}
+                onClose={handleCancelPublish}
+                maxWidth="sm"
+                fullWidth
+                slotProps={{ paper: { sx: { borderRadius: '10px' } } }}
+            >
+                <DialogTitle sx={{ bgcolor: '#F4F5F7', borderBottom: '1px solid #DFE1E6', pb: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        {selectedTool && (
+                            <Box
+                                sx={{
+                                    width: 40,
+                                    height: 40,
+                                    borderRadius: '8px',
+                                    bgcolor: '#E8F0FE',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '1.4rem',
+                                }}
+                            >
+                                {selectedTool.icon}
+                            </Box>
+                        )}
+                        <Typography variant="h6" sx={{ fontWeight: 700, color: '#172B4D', fontSize: '1.05rem' }}>
+                            Publish to {selectedTool?.name}
+                        </Typography>
+                    </Box>
+                </DialogTitle>
+                <DialogContent sx={{ pt: 3, pb: 2 }}>
+                    <Typography variant="body2" sx={{ color: '#172B4D', lineHeight: 1.7 }}>
+                        Are you sure you want to publish the test plan for{' '}
+                        <Box component="span" sx={{ fontWeight: 700 }}>{issue?.key}</Box>
+                        {' '}to {selectedTool?.name}?
+                    </Typography>
+                    <Box sx={{ mt: 2, p: 1.5, bgcolor: '#F4F5F7', borderRadius: '6px' }}>
+                        <Typography variant="caption" sx={{ color: '#5E6C84', fontWeight: 600 }}>
+                            File
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#172B4D', fontWeight: 600, mt: 0.25, wordBreak: 'break-all' }}>
+                            {issue?.test_case_filename}
+                        </Typography>
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, py: 2, bgcolor: '#F4F5F7', borderTop: '1px solid #DFE1E6' }}>
+                    <Button
+                        onClick={handleCancelPublish}
+                        variant="outlined"
+                        disabled={isPublishing}
+                        sx={{
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            borderColor: '#DFE1E6',
+                            color: '#42526E',
+                            '&:hover': { borderColor: '#B3BAC5', bgcolor: '#EBECF0' },
+                        }}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={handleConfirmPublish}
+                        variant="contained"
+                        disabled={isPublishing}
+                        startIcon={isPublishing ? <CircularProgress size={18} color="inherit" /> : null}
+                        sx={{
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            bgcolor: '#3614b2',
+                            '&:hover': { bgcolor: '#4a12a4' },
+                        }}
+                    >
+                        {isPublishing ? 'Publishing...' : 'Confirm & Publish'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Card >
     );
 });

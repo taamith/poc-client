@@ -51,6 +51,20 @@ export const testPlanApi = {
         const response = await testPlanApiClient.put<UpdateTestPlanResponse>(url, payload);
         return response.data;
     },
+
+    /**
+     * Publish a test plan to Confluence
+     * @param testCaseFilename - The test plan filename
+     * @param spaceId - Confluence space ID (default: 393220)
+     */
+    publishTestPlan: async (testCaseFilename: string, spaceId: number = 393220): Promise<{ message: string }> => {
+        const url = 'https://9xd63zeaqb.execute-api.us-east-1.amazonaws.com/dev/publish-test-plan';
+        const response = await testPlanApiClient.post<{ message: string }>(url, {
+            space_id: spaceId,
+            test_case_filename: testCaseFilename,
+        });
+        return response.data;
+    },
 };
 
 export default testPlanApi;
