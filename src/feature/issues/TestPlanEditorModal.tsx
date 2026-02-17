@@ -17,12 +17,14 @@ import {
     jsonToReadableText,
     readableTextToJson,
 } from '../../lib/utils/testPlanFormatter';
+import { ERRORS, SUCCESS, LOADING, BUTTONS, HEADERS } from '../../lib/constants/messages';
 
 interface TestPlanEditorModalProps {
     open: boolean;
     onClose: () => void;
     filename: string | null;
     isQaApproved?: boolean;
+    issueTitle?: string;
 }
 
 const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
@@ -30,11 +32,11 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
     onClose,
     filename,
     isQaApproved = false,
+    issueTitle,
 }) => {
     const [content, setContent] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(false);
     const [saving, setSaving] = useState<boolean>(false);
-    // Track whether the fetched content was structured JSON (so we can convert back on save)
     const [isStructuredJson, setIsStructuredJson] = useState<boolean>(false);
 
     useEffect(() => {
@@ -42,7 +44,6 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
             fetchTestPlan();
         } else if (!open) {
             setContent('');
-            
             setLoading(false);
             setIsStructuredJson(false);
         }
@@ -52,20 +53,15 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
         if (!filename) return;
 
         setLoading(true);
-        
 
         try {
             const response = await testPlanApi.fetchTestPlan(filename);
-
-            // Try to parse as structured test plan JSON
             const testPlanJson = extractTestPlanJson(response.content);
 
             if (testPlanJson) {
-                // Convert JSON → readable plain text for display/editing
                 setContent(jsonToReadableText(testPlanJson));
                 setIsStructuredJson(true);
             } else {
-                // Fallback: extract raw text
                 let raw: any = response.content;
                 if (typeof raw === 'string') {
                     try {
@@ -82,8 +78,7 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
             }
         } catch (err: any) {
             console.error('Error fetching test plan:', err);
-            const errorMsg = err.response?.data?.message || err.message || 'Failed to load test plan';
-
+            const errorMsg = err.response?.data?.message || err.message || ERRORS.LOAD_TEST_PLAN;
             toast.error(errorMsg);
         } finally {
             setLoading(false);
@@ -94,13 +89,11 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
         if (!filename) return;
 
         setSaving(true);
-        
 
         try {
             let planPayload: string;
 
             if (isStructuredJson) {
-                // Convert readable plain text back → JSON, then stringify for the API
                 const jsonObj = readableTextToJson(content);
                 planPayload = JSON.stringify(jsonObj);
             } else {
@@ -108,12 +101,11 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
             }
 
             const response = await testPlanApi.updateTestPlan(filename, planPayload);
-            toast.success(response.message || 'Test plan saved successfully');
+            toast.success(response.message || SUCCESS.TEST_PLAN_SAVED);
             onClose();
         } catch (err: any) {
             console.error('Error saving test plan:', err);
-            const errorMsg = err.response?.data?.message || err.message || 'Failed to save test plan';
-
+            const errorMsg = err.response?.data?.message || err.message || ERRORS.SAVE_TEST_PLAN;
             toast.error(errorMsg);
         } finally {
             setSaving(false);
@@ -122,7 +114,6 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
 
     const handleClose = () => {
         setContent('');
-        
         onClose();
     };
 
@@ -136,14 +127,16 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
             PaperProps={{
                 sx: {
                     borderRadius: '8px',
-                    minHeight: '600px',
+                    height: '80vh',
+                    display: 'flex',
+                    flexDirection: 'column',
                 },
             }}
         >
             <DialogTitle sx={{ bgcolor: '#F4F5F7', borderBottom: '2px solid #DFE1E6', pb: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Typography variant="h6" sx={{ fontWeight: 700, color: '#172B4D' }}>
-                        {isQaApproved ? 'View Test Plan (Read-Only)' : 'Edit Test Plan'}
+                        {HEADERS.TEST_CASES(issueTitle)}
                     </Typography>
                     {isQaApproved && (
                         <Box
@@ -157,55 +150,48 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
                                 fontWeight: 700,
                             }}
                         >
-                            QA APPROVED
+                            {HEADERS.QA_APPROVED}
                         </Box>
                     )}
                 </Box>
-                {filename && (
-                    <Typography variant="caption" sx={{ color: '#5E6C84', display: 'block', mt: 0.5 }}>
-                        {filename}
-                    </Typography>
-                )}
             </DialogTitle>
 
-            <DialogContent sx={{ p: 3, minHeight: '400px' }}>
+            <DialogContent sx={{ p: 3, flex: 1, overflow: 'auto' }}>
                 {loading ? (
                     <Box
                         sx={{
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            minHeight: '400px',
+                            height: '100%',
                         }}
                     >
                         <CircularProgress />
                     </Box>
                 ) : (
-                    <Box sx={{ height: '100%' }}>
-                        <TextField
-                            multiline
-                            fullWidth
-                            minRows={18}
-                            maxRows={30}
-                            variant="outlined"
-                            value={content}
-                            onChange={(e) => setContent(e.target.value)}
-                            InputProps={{
-                                readOnly: isQaApproved,
-                                sx: {
-                                    fontFamily: '"Segoe UI", Roboto, sans-serif',
-                                    fontSize: '14px',
-                                    lineHeight: 1.7,
-                                    backgroundColor: isQaApproved ? '#F4F5F7' : 'white',
-                                    '& .MuiInputBase-input': {
-                                        padding: '16px',
-                                        whiteSpace: 'pre-wrap',
-                                    },
+                    <TextField
+                        multiline
+                        fullWidth
+                        variant="outlined"
+                        value={content}
+                        onChange={(e) => setContent(e.target.value)}
+                        InputProps={{
+                            readOnly: isQaApproved,
+                            sx: {
+                                fontFamily: '"Segoe UI", Roboto, sans-serif',
+                                fontSize: '14px',
+                                lineHeight: 1.7,
+                                backgroundColor: isQaApproved ? '#F4F5F7' : 'white',
+                                alignItems: 'flex-start',
+                                '& .MuiInputBase-input': {
+                                    padding: '16px',
+                                    whiteSpace: 'pre-wrap',
+                                    overflow: 'visible !important',
                                 },
-                            }}
-                            placeholder="Loading test plan content..."
-                        />
-                    </Box>
+                            },
+                        }}
+                        placeholder={LOADING.TEST_PLAN_CONTENT}
+                    />
                 )}
             </DialogContent>
 
@@ -224,7 +210,7 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
                         },
                     }}
                 >
-                    Close
+                    {BUTTONS.CLOSE}
                 </Button>
                 {!isQaApproved && (
                     <Button
@@ -241,7 +227,7 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
                             },
                         }}
                     >
-                        {saving ? 'Saving...' : 'Save'}
+                        {saving ? LOADING.SAVING : BUTTONS.SAVE}
                     </Button>
                 )}
             </DialogActions>

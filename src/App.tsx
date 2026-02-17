@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { ThemeProvider, CssBaseline, Container, Box, CircularProgress, Typography } from '@mui/material';
+import { BRANDING } from './lib/constants/messages';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
@@ -99,7 +100,7 @@ const App = observer(() => {
           }}
         >
           <Typography variant="caption" sx={{ color: '#6B778C' }}>
-            © AutoSprint AI, BSC Solutions India Pvt Ltd © 2026
+            {BRANDING.COPYRIGHT}
           </Typography>
         </Box>
       </ThemeProvider>

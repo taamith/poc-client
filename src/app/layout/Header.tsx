@@ -4,6 +4,7 @@ import { observer } from 'mobx-react-lite';
 import { useNavigate } from 'react-router-dom';
 import { jiraApi } from '../../lib/api/jira';
 import { issueStore } from '../store/issueStore';
+import { BRANDING, LOADING, BUTTONS } from '../../lib/constants/messages';
 
 const Header = observer(() => {
     const [isDisconnecting, setIsDisconnecting] = useState(false);
@@ -40,10 +41,10 @@ const Header = observer(() => {
         >
             <CircularProgress color="inherit" />
             <Typography variant="h6" sx={{ fontWeight: 500 }}>
-                Disconnecting...
+                {LOADING.DISCONNECTING}
             </Typography>
             <Typography variant="body2" sx={{ opacity: 0.8 }}>
-                Please wait while we log you out.
+                {LOADING.PLEASE_WAIT_LOGOUT}
             </Typography>
         </Backdrop>
         <AppBar
@@ -63,7 +64,7 @@ const Header = observer(() => {
                             onClick={() => window.location.reload()}
                             sx={{ fontWeight: 600, fontSize: '1rem', color: '#172B4D', cursor: 'pointer', userSelect: 'none' }}
                         >
-                            AutoSprint AI
+                            {BRANDING.APP_NAME}
                         </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', gap: 1 }}>
@@ -81,7 +82,7 @@ const Header = observer(() => {
                                 }
                             }}
                         >
-                            {isDisconnecting ? 'Disconnecting...' : 'Disconnect'}
+                            {isDisconnecting ? LOADING.DISCONNECTING : BUTTONS.DISCONNECT}
                         </Button>
                     </Box>
                 </Toolbar>

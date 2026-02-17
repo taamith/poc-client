@@ -2,6 +2,7 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { Card, CardContent, Typography, List, ListItem, ListItemText, ListItemButton, CircularProgress, Box, Divider, Checkbox } from '@mui/material';
 import { issueStore } from '../../app/store/issueStore';
+import { HEADERS, PLACEHOLDERS } from '../../lib/constants/messages';
 
 const IssueList: React.FC = observer(() => {
     if (issueStore.loading && issueStore.issues.length === 0) {
@@ -26,7 +27,7 @@ const IssueList: React.FC = observer(() => {
                             letterSpacing: '0.05em'
                         }}
                     >
-                        User Stories ({issueStore.issues.length})
+                        {HEADERS.USER_STORIES(issueStore.issues.length)}
                     </Typography>
                     {issueStore.issues.length > 0 && (
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -51,7 +52,7 @@ const IssueList: React.FC = observer(() => {
                                 id="select-all-stories"
                             />
                             <Typography variant="caption" sx={{ color: '#5E6C84', fontWeight: 600 }}>
-                                ALL
+                                {HEADERS.SELECT_ALL}
                             </Typography>
                         </Box>
                     )}
@@ -121,7 +122,7 @@ const IssueList: React.FC = observer(() => {
                                                     alignSelf: 'flex-start'
                                                 }}
                                             >
-                                                ✓ Test Plan Ready
+                                                {PLACEHOLDERS.TEST_PLAN_READY}
                                             </Box>
                                         )}
                                     </Box>
@@ -131,7 +132,7 @@ const IssueList: React.FC = observer(() => {
                     ))}
                     {issueStore.issues.length === 0 && !issueStore.loading && (
                         <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                            No stories found.
+                            {PLACEHOLDERS.NO_STORIES}
                         </Typography>
                     )}
                 </List>

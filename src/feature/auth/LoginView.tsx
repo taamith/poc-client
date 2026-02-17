@@ -11,6 +11,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { jiraApi } from '../../lib/api/jira';
 import { issueStore } from '../../app/store/issueStore';
+import { BRANDING, LOADING, BUTTONS, PLACEHOLDERS } from '../../lib/constants/messages';
 
 interface Provider {
     id: string;
@@ -34,7 +35,6 @@ const LoginView: React.FC = observer(() => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        // If already authenticated (e.g. session still valid), skip login
         if (issueStore.isAuthenticated) {
             navigate('/issues', { replace: true });
         }
@@ -109,10 +109,10 @@ const LoginView: React.FC = observer(() => {
             >
                 <CircularProgress color="inherit" />
                 <Typography variant="h6" sx={{ fontWeight: 500 }}>
-                    Waiting for Jira Authentication...
+                    {LOADING.WAITING_AUTH}
                 </Typography>
                 <Typography variant="body2" sx={{ opacity: 0.8 }}>
-                    Please complete the login in the popup window.
+                    {LOADING.COMPLETE_LOGIN}
                 </Typography>
             </Backdrop>
 
@@ -127,8 +127,7 @@ const LoginView: React.FC = observer(() => {
                 }}
             >
                 <Stack spacing={3} alignItems="center" textAlign="center">
-                    
-                    {/* Brand Name */}
+
                     <Box>
                         <Typography
                             variant="h4"
@@ -141,30 +140,27 @@ const LoginView: React.FC = observer(() => {
                                 mb: 0.5,
                             }}
                         >
-                            AutoSprint AI
+                            {BRANDING.APP_NAME}
                         </Typography>
                     </Box>
 
-                    {/* Welcome Section */}
                     <Box>
                         <Typography variant="h5" sx={{ fontWeight: 700, color: '#172B4D', mb: 0.5 }}>
-                            Welcome Back
+                            {BRANDING.WELCOME}
                         </Typography>
                         <Typography variant="body2" sx={{ color: '#6B778C' }}>
-                            Select your authentication provider
+                            {BRANDING.AUTH_SUBTITLE}
                             <Box component="span" sx={{ color: '#5a1196', ml: 0.5 }}>.</Box>
                         </Typography>
                     </Box>
 
-                    {/* Provider Dropdown */}
                     <Box sx={{ width: '100%', textAlign: 'left' }}>
                         <Typography variant="body2" sx={{ fontWeight: 600, color: '#42526E', mb: 1 }}>
-                            Authentication Provider
+                            {BRANDING.AUTH_PROVIDER_LABEL}
                         </Typography>
 
                         <ClickAwayListener onClickAway={() => { setDropdownOpen(false); setSearchQuery(''); }}>
                             <Box sx={{ position: 'relative' }}>
-                                {/* Dropdown Trigger */}
                                 <Box
                                     onClick={() => setDropdownOpen(!dropdownOpen)}
                                     sx={{
@@ -204,7 +200,7 @@ const LoginView: React.FC = observer(() => {
                                         </Box>
                                     ) : (
                                         <Typography variant="body2" sx={{ color: '#A5ADBA' }}>
-                                            Choose a provider...
+                                            {PLACEHOLDERS.CHOOSE_PROVIDER}
                                         </Typography>
                                     )}
                                     {dropdownOpen
@@ -213,7 +209,6 @@ const LoginView: React.FC = observer(() => {
                                     }
                                 </Box>
 
-                                {/* Dropdown Panel */}
                                 {dropdownOpen && (
                                     <Paper
                                         elevation={4}
@@ -229,13 +224,12 @@ const LoginView: React.FC = observer(() => {
                                             overflow: 'hidden',
                                         }}
                                     >
-                                        {/* Search Input */}
                                         <Box sx={{ p: 1.5 }}>
                                             <TextField
                                                 inputRef={searchRef}
                                                 size="small"
                                                 fullWidth
-                                                placeholder="Search providers..."
+                                                placeholder={PLACEHOLDERS.SEARCH_PROVIDERS}
                                                 value={searchQuery}
                                                 onChange={(e) => setSearchQuery(e.target.value)}
                                                 slotProps={{
@@ -256,7 +250,6 @@ const LoginView: React.FC = observer(() => {
                                             />
                                         </Box>
 
-                                        {/* Provider List */}
                                         {filteredProviders.map((provider) => (
                                             <Box
                                                 key={provider.id}
@@ -299,7 +292,7 @@ const LoginView: React.FC = observer(() => {
                                         {filteredProviders.length === 0 && (
                                             <Box sx={{ px: 1.5, py: 2, textAlign: 'center' }}>
                                                 <Typography variant="body2" sx={{ color: '#6B778C' }}>
-                                                    No providers found
+                                                    {PLACEHOLDERS.NO_PROVIDERS}
                                                 </Typography>
                                             </Box>
                                         )}
@@ -309,7 +302,6 @@ const LoginView: React.FC = observer(() => {
                         </ClickAwayListener>
                     </Box>
 
-                    {/* Continue Button */}
                     <Button
                         fullWidth
                         variant="contained"
@@ -334,25 +326,23 @@ const LoginView: React.FC = observer(() => {
                             },
                         }}
                     >
-                        Launch {selectedProvider?.name || 'Provider'}
+                        {BUTTONS.LAUNCH(selectedProvider?.name || 'Provider')}
                     </Button>
 
-                    {/* Terms Text */}
                     <Typography variant="caption" sx={{ color: '#6B778C', lineHeight: 1.6 }}>
                         By signing in, you agree to our{' '}
                         <Box component="span" sx={{ color: '#4a12a4', cursor: 'pointer', textDecoration: 'underline' }}>
-                            Terms of Service
+                            {BRANDING.TERMS}
                         </Box>
                         {' '}and{' '}
                         <Box component="span" sx={{ color: '#4a12a4', cursor: 'pointer', textDecoration: 'underline' }}>
-                            Privacy Policy
+                            {BRANDING.PRIVACY}
                         </Box>
                     </Typography>
 
-                    {/* Footer */}
                     <Divider sx={{ width: '100%' }} />
                     <Typography variant="caption" sx={{ color: '#A5ADBA' }}>
-                        © AutoSprint AI, BSC Solutions India Pvt Ltd © 2026
+                        {BRANDING.COPYRIGHT}
                     </Typography>
                 </Stack>
             </Paper>

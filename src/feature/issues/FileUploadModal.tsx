@@ -16,11 +16,13 @@ import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { uploadFiles } from '../../lib/api/uploadApi';
 import { toast } from 'sonner';
+import {
+    ERRORS, SUCCESS, LOADING, BUTTONS, HEADERS, PLACEHOLDERS,
+} from '../../lib/constants/messages';
 
 interface FileUploadModalProps {
     open: boolean;
     onClose: () => void;
-    /** Called when user clicks "Skip" or after files are uploaded successfully. */
     onProceed: () => void;
 }
 
@@ -39,7 +41,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ open, onClose, onProc
     };
 
     const handleClose = () => {
-        if (uploading) return; // don't close while uploading
+        if (uploading) return;
         reset();
         onClose();
     };
@@ -47,7 +49,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ open, onClose, onProc
     const addFiles = (incoming: FileList | File[]) => {
         const pdfs = Array.from(incoming).filter((f) => f.type === 'application/pdf');
         if (pdfs.length === 0) {
-            toast.error('Only PDF files are allowed');
+            toast.error(ERRORS.PDF_ONLY);
             return;
         }
         setFiles((prev) => {
@@ -76,7 +78,6 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ open, onClose, onProc
 
     const handleUploadAndGenerate = async () => {
         if (files.length === 0) {
-            // No files — just proceed
             reset();
             onProceed();
             return;
@@ -89,12 +90,12 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ open, onClose, onProc
             await uploadFiles(files, (fileIdx, pct) => {
                 setFileProgress((prev) => ({ ...prev, [fileIdx]: pct }));
             });
-            toast.success(`${files.length} file${files.length > 1 ? 's' : ''} uploaded successfully`);
+            toast.success(SUCCESS.FILES_UPLOADED(files.length));
             reset();
             onProceed();
         } catch (err: any) {
             console.error('Upload failed:', err);
-            toast.error(err.response?.data?.message || err.message || 'Failed to upload files');
+            toast.error(err.response?.data?.message || err.message || ERRORS.UPLOAD_FILES);
             setUploading(false);
         }
     };
@@ -119,15 +120,14 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ open, onClose, onProc
         >
             <DialogTitle sx={{ bgcolor: '#F4F5F7', borderBottom: '2px solid #DFE1E6', pb: 2 }}>
                 <Typography variant="h6" sx={{ fontWeight: 700, color: '#172B4D' }}>
-                    Upload Reference Documents
+                    {HEADERS.UPLOAD_DOCUMENTS}
                 </Typography>
                 <Typography variant="caption" sx={{ color: '#5E6C84', display: 'block', mt: 0.5 }}>
-                    Optionally upload PDF files to enhance test plan generation
+                    {HEADERS.UPLOAD_SUBTITLE}
                 </Typography>
             </DialogTitle>
 
             <DialogContent sx={{ p: 3 }}>
-                {/* Drop zone */}
                 <Box
                     onDrop={handleDrop}
                     onDragOver={handleDragOver}
@@ -149,10 +149,10 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ open, onClose, onProc
                 >
                     <CloudUploadIcon sx={{ fontSize: 48, color: '#5a1196', mb: 1 }} />
                     <Typography variant="body1" sx={{ fontWeight: 600, color: '#172B4D' }}>
-                        Drag & drop PDF files here
+                        {PLACEHOLDERS.DRAG_DROP}
                     </Typography>
                     <Typography variant="body2" sx={{ color: '#5E6C84', mt: 0.5 }}>
-                        or click to browse
+                        {PLACEHOLDERS.OR_BROWSE}
                     </Typography>
                     <input
                         ref={inputRef}
@@ -167,11 +167,10 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ open, onClose, onProc
                     />
                 </Box>
 
-                {/* File list */}
                 {files.length > 0 && (
                     <Box sx={{ mt: 2 }}>
                         <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#5E6C84', mb: 1 }}>
-                            {files.length} file{files.length > 1 ? 's' : ''} selected
+                            {PLACEHOLDERS.FILES_SELECTED(files.length)}
                         </Typography>
                         {files.map((file, idx) => (
                             <Box
@@ -216,11 +215,10 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ open, onClose, onProc
                     </Box>
                 )}
 
-                {/* Overall progress */}
                 {uploading && (
                     <Box sx={{ mt: 2, textAlign: 'center' }}>
                         <Typography variant="body2" sx={{ color: '#5a1196', fontWeight: 600, mb: 1 }}>
-                            Uploading... {totalProgress}%
+                            {LOADING.UPLOADING(totalProgress)}
                         </Typography>
                         <LinearProgress
                             variant="determinate"
@@ -244,7 +242,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ open, onClose, onProc
                         '&:hover': { borderColor: '#B3BAC5', bgcolor: '#EBECF0' },
                     }}
                 >
-                    Cancel
+                    {BUTTONS.CANCEL}
                 </Button>
                 <Button
                     onClick={handleSkip}
@@ -258,7 +256,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ open, onClose, onProc
                         '&:hover': { borderColor: '#4a0e80', bgcolor: 'rgba(90,17,150,0.04)' },
                     }}
                 >
-                    Skip & Generate
+                    {BUTTONS.SKIP_GENERATE}
                 </Button>
                 <Button
                     onClick={handleUploadAndGenerate}
@@ -272,7 +270,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ open, onClose, onProc
                         '&:hover': { bgcolor: '#4a12a4' },
                     }}
                 >
-                    {uploading ? 'Uploading...' : 'Upload & Generate'}
+                    {uploading ? LOADING.UPLOADING_SHORT : BUTTONS.UPLOAD_GENERATE}
                 </Button>
             </DialogActions>
         </Dialog>

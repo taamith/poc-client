@@ -29,6 +29,9 @@ import { testPlanApi } from '../../lib/api/testPlanApi';
 import { toast } from 'sonner';
 import TestPlanEditorModal from './TestPlanEditorModal';
 import FileUploadModal from './FileUploadModal';
+import {
+    ERRORS, SUCCESS, LOADING, BUTTONS, HEADERS, PLACEHOLDERS, CONFIRM, DEFAULTS, LABELS,
+} from '../../lib/constants/messages';
 
 const BASE_URL = 'https://bscsolutionsinc-dev-ed.develop.lightning.force.com/lightning/page/home';
 
@@ -53,7 +56,6 @@ const IssueDetailView: React.FC = observer(() => {
     const selectedCount = issueStore.selectedIssueKeys.size;
     const isBatch = selectedCount > 1;
 
-    // Navigation for multi-select
     const selectedKeysArray = Array.from(issueStore.selectedIssueKeys);
     const currentIndex = issue ? selectedKeysArray.indexOf(issue.key) : -1;
     const hasPrev = isBatch && currentIndex > 0;
@@ -71,7 +73,6 @@ const IssueDetailView: React.FC = observer(() => {
         }
     };
 
-    // Test Plan Editor Modal state
     const [modalOpen, setModalOpen] = React.useState<boolean>(false);
     const [selectedFilename, setSelectedFilename] = React.useState<string | null>(null);
     const [isQaApproved, setIsQaApproved] = React.useState<boolean>(false);
@@ -88,7 +89,6 @@ const IssueDetailView: React.FC = observer(() => {
         setIsQaApproved(false);
     };
 
-    // File Upload Modal state
     const [uploadModalOpen, setUploadModalOpen] = React.useState(false);
     const [pendingGenerateMode, setPendingGenerateMode] = React.useState<'single' | 'batch'>('single');
 
@@ -115,7 +115,6 @@ const IssueDetailView: React.FC = observer(() => {
         setUploadModalOpen(false);
     };
 
-    // Publish dropdown state
     const [publishDropdownOpen, setPublishDropdownOpen] = React.useState(false);
     const [confirmDialogOpen, setConfirmDialogOpen] = React.useState(false);
     const [selectedTool, setSelectedTool] = React.useState<PublishTool | null>(null);
@@ -133,12 +132,12 @@ const IssueDetailView: React.FC = observer(() => {
         setIsPublishing(true);
         try {
             const response = await testPlanApi.publishTestPlan(issue.test_case_filename);
-            toast.success(response.message || `Test plan published to ${selectedTool.name} successfully`);
+            toast.success(response.message || SUCCESS.PUBLISHED_TO(selectedTool.name));
             setConfirmDialogOpen(false);
             setSelectedTool(null);
         } catch (err: any) {
             console.error('Publish error:', err);
-            const errorMsg = err.response?.data?.message || err.message || `Failed to publish to ${selectedTool.name}`;
+            const errorMsg = err.response?.data?.message || err.message || ERRORS.PUBLISH_TO(selectedTool.name);
             toast.error(errorMsg);
         } finally {
             setIsPublishing(false);
@@ -154,7 +153,7 @@ const IssueDetailView: React.FC = observer(() => {
         return (
             <Card sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 4, borderRadius: '3px', overflow: 'auto' }}>
                 <Typography variant="body1" color="text.secondary" fontWeight={500}>
-                    Select one or more issues to view details or generate plans
+                    {PLACEHOLDERS.SELECT_ISSUES}
                 </Typography>
             </Card>
         );
@@ -167,11 +166,11 @@ const IssueDetailView: React.FC = observer(() => {
     }).length;
     const pendingCount = selectedCount - readyCount;
 
-    let storyLabel = `${selectedCount} ${selectedCount === 1 ? 'Story' : 'Stories'} Selected`;
+    let storyLabel = LABELS.STORIES_SELECTED(selectedCount);
     if (isBatch) {
         const parts: string[] = [];
-        if (pendingCount > 0) parts.push(`${pendingCount} to generate`);
-        if (readyCount > 0) parts.push(`${readyCount} ready to view`);
+        if (pendingCount > 0) parts.push(LABELS.TO_GENERATE(pendingCount));
+        if (readyCount > 0) parts.push(LABELS.READY_TO_VIEW(readyCount));
         storyLabel += ` (${parts.join(', ')})`;
     }
 
@@ -206,9 +205,7 @@ const IssueDetailView: React.FC = observer(() => {
                             </Typography>
                         </Box>
 
-                        {/* Action buttons in top-right */}
                         <Box sx={{ display: 'flex', gap: 1, flexShrink: 0, alignItems: 'center' }}>
-                            {/* Current issue action: View/Edit or Generate */}
                             {hasTestPlan ? (
                                 <Button
                                     variant="contained"
@@ -219,10 +216,9 @@ const IssueDetailView: React.FC = observer(() => {
                                     }}
                                     sx={{ bgcolor: '#5a1196', '&:hover': { bgcolor: '#660f89' }, textTransform: 'none', fontWeight: 600 }}
                                 >
-                                    {issue!.is_qa_approved ? 'View' : 'Edit'}
+                                    {issue!.is_qa_approved ? BUTTONS.VIEW : BUTTONS.EDIT}
                                 </Button>
                             ) : isBatch && pendingCount > 0 ? (
-                                /* Batch generate — shown instead of single Generate when multiple issues selected */
                                 <Button
                                     variant="contained"
                                     size="small"
@@ -231,7 +227,7 @@ const IssueDetailView: React.FC = observer(() => {
                                     disabled={isProcessing}
                                     sx={{ bgcolor: '#172B4D', '&:hover': { bgcolor: '#253858' }, textTransform: 'none', fontWeight: 600 }}
                                 >
-                                    {isProcessing ? 'Generating...' : `Generate All (${pendingCount})`}
+                                    {isProcessing ? LOADING.GENERATING : BUTTONS.GENERATE_ALL(pendingCount)}
                                 </Button>
                             ) : (
                                 <Button
@@ -242,11 +238,10 @@ const IssueDetailView: React.FC = observer(() => {
                                     disabled={isProcessing}
                                     sx={{ bgcolor: '#3614b2', '&:hover': { bgcolor: '#4a12a4' }, textTransform: 'none', fontWeight: 600 }}
                                 >
-                                    {isProcessing ? 'Generating...' : 'Generate'}
+                                    {isProcessing ? LOADING.GENERATING : BUTTONS.GENERATE}
                                 </Button>
                             )}
 
-                            {/* Publish To dropdown — only shown when test plan exists */}
                             {hasTestPlan && (
                                 <ClickAwayListener onClickAway={() => setPublishDropdownOpen(false)}>
                                     <Box sx={{ position: 'relative' }}>
@@ -263,7 +258,7 @@ const IssueDetailView: React.FC = observer(() => {
                                                 '&:hover': { borderColor: '#4a0e80', bgcolor: 'rgba(90,17,150,0.04)' },
                                             }}
                                         >
-                                            Publish To
+                                            {BUTTONS.PUBLISH_TO}
                                         </Button>
 
                                         {publishDropdownOpen && (
@@ -328,10 +323,10 @@ const IssueDetailView: React.FC = observer(() => {
                     {issue && (
                         <Box>
                             <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#5E6C84', mb: 1.5, textTransform: 'uppercase' }}>
-                                Description
+                                {HEADERS.DESCRIPTION}
                             </Typography>
                             <Typography variant="body1" sx={{ color: '#172B4D', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-                                {issue.description || 'No description available.'}
+                                {issue.description || DEFAULTS.NO_DESCRIPTION_DISPLAY}
                             </Typography>
                         </Box>
                     )}
@@ -345,7 +340,6 @@ const IssueDetailView: React.FC = observer(() => {
                 </Stack>
             </CardContent>
 
-            {/* Prev / Next navigation for multi-select */}
             {isBatch && (
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1, px: 3, py: 1.5, borderTop: '1px solid #DFE1E6', flexShrink: 0 }}>
                     <Typography variant="caption" sx={{ color: '#6B778C', fontWeight: 600, mr: 0.5 }}>
@@ -372,22 +366,20 @@ const IssueDetailView: React.FC = observer(() => {
                 </Box>
             )}
 
-            {/* Test Plan Editor Modal */}
             <TestPlanEditorModal
                 open={modalOpen}
                 onClose={handleCloseModal}
                 filename={selectedFilename}
                 isQaApproved={isQaApproved}
+                issueTitle={issue?.summary}
             />
 
-            {/* File Upload Modal — shown before generating */}
             <FileUploadModal
                 open={uploadModalOpen}
                 onClose={handleUploadCancel}
                 onProceed={handleUploadComplete}
             />
 
-            {/* Publish Confirmation Dialog */}
             <Dialog
                 open={confirmDialogOpen}
                 onClose={handleCancelPublish}
@@ -414,19 +406,17 @@ const IssueDetailView: React.FC = observer(() => {
                             </Box>
                         )}
                         <Typography variant="h6" sx={{ fontWeight: 700, color: '#172B4D', fontSize: '1.05rem' }}>
-                            Publish to {selectedTool?.name}
+                            {HEADERS.PUBLISH_TO(selectedTool?.name || '')}
                         </Typography>
                     </Box>
                 </DialogTitle>
                 <DialogContent sx={{ pt: 3, pb: 2 }}>
                     <Typography variant="body2" sx={{ color: '#172B4D', lineHeight: 1.7 }}>
-                        Are you sure you want to publish the test plan for{' '}
-                        <Box component="span" sx={{ fontWeight: 700 }}>{issue?.key}</Box>
-                        {' '}to {selectedTool?.name}?
+                        {CONFIRM.PUBLISH(issue?.key || '', selectedTool?.name || '')}
                     </Typography>
                     <Box sx={{ mt: 2, p: 1.5, bgcolor: '#F4F5F7', borderRadius: '6px' }}>
                         <Typography variant="caption" sx={{ color: '#5E6C84', fontWeight: 600 }}>
-                            File
+                            {HEADERS.FILE}
                         </Typography>
                         <Typography variant="body2" sx={{ color: '#172B4D', fontWeight: 600, mt: 0.25, wordBreak: 'break-all' }}>
                             {issue?.test_case_filename}
@@ -446,7 +436,7 @@ const IssueDetailView: React.FC = observer(() => {
                             '&:hover': { borderColor: '#B3BAC5', bgcolor: '#EBECF0' },
                         }}
                     >
-                        Cancel
+                        {BUTTONS.CANCEL}
                     </Button>
                     <Button
                         onClick={handleConfirmPublish}
@@ -460,7 +450,7 @@ const IssueDetailView: React.FC = observer(() => {
                             '&:hover': { bgcolor: '#4a12a4' },
                         }}
                     >
-                        {isPublishing ? 'Publishing...' : 'Confirm & Publish'}
+                        {isPublishing ? LOADING.PUBLISHING : BUTTONS.CONFIRM_PUBLISH}
                     </Button>
                 </DialogActions>
             </Dialog>
