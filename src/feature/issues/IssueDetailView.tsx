@@ -152,7 +152,7 @@ const IssueDetailView: React.FC = observer(() => {
 
     if (selectedCount === 0 && !isLoading) {
         return (
-            <Card sx={{ height: '100%', minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 4, borderRadius: '3px' }}>
+            <Card sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 4, borderRadius: '3px', overflow: 'auto' }}>
                 <Typography variant="body1" color="text.secondary" fontWeight={500}>
                     Select one or more issues to view details or generate plans
                 </Typography>
@@ -178,7 +178,7 @@ const IssueDetailView: React.FC = observer(() => {
     const hasTestPlan = !!issue?.test_cases_generated;
 
     return (
-        <Card sx={{ height: '100%', borderRadius: '3px', position: 'relative' }}>
+        <Card sx={{ height: '100%', borderRadius: '3px', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             {isLoading && !isBatch && (
                 <Backdrop
                     sx={{
@@ -194,7 +194,7 @@ const IssueDetailView: React.FC = observer(() => {
                 </Backdrop>
             )}
 
-            <CardContent sx={{ p: 4 }}>
+            <CardContent sx={{ p: 4, flex: 1, overflow: 'auto' }}>
                 <Stack spacing={3}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <Box>
@@ -342,17 +342,12 @@ const IssueDetailView: React.FC = observer(() => {
                         </Typography>
                     )}
 
-                    {issueStore.error && (
-                        <Typography variant="body2" sx={{ color: '#FF5630', fontWeight: 600, mt: 2 }}>
-                            {issueStore.error}
-                        </Typography>
-                    )}
                 </Stack>
             </CardContent>
 
             {/* Prev / Next navigation for multi-select */}
             {isBatch && (
-                <Box sx={{ position: 'absolute', bottom: 16, right: 16, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1, px: 3, py: 1.5, borderTop: '1px solid #DFE1E6', flexShrink: 0 }}>
                     <Typography variant="caption" sx={{ color: '#6B778C', fontWeight: 600, mr: 0.5 }}>
                         {currentIndex + 1} / {selectedKeysArray.length}
                     </Typography>

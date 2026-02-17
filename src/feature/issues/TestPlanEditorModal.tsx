@@ -8,7 +8,6 @@ import {
     CircularProgress,
     Box,
     Typography,
-    Alert,
     TextField,
 } from '@mui/material';
 import { testPlanApi } from '../../lib/api/testPlanApi';
@@ -35,7 +34,6 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
     const [content, setContent] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(false);
     const [saving, setSaving] = useState<boolean>(false);
-    const [error, setError] = useState<string | null>(null);
     // Track whether the fetched content was structured JSON (so we can convert back on save)
     const [isStructuredJson, setIsStructuredJson] = useState<boolean>(false);
 
@@ -44,7 +42,7 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
             fetchTestPlan();
         } else if (!open) {
             setContent('');
-            setError(null);
+            
             setLoading(false);
             setIsStructuredJson(false);
         }
@@ -54,7 +52,7 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
         if (!filename) return;
 
         setLoading(true);
-        setError(null);
+        
 
         try {
             const response = await testPlanApi.fetchTestPlan(filename);
@@ -85,7 +83,7 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
         } catch (err: any) {
             console.error('Error fetching test plan:', err);
             const errorMsg = err.response?.data?.message || err.message || 'Failed to load test plan';
-            setError(errorMsg);
+
             toast.error(errorMsg);
         } finally {
             setLoading(false);
@@ -96,7 +94,7 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
         if (!filename) return;
 
         setSaving(true);
-        setError(null);
+        
 
         try {
             let planPayload: string;
@@ -115,7 +113,7 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
         } catch (err: any) {
             console.error('Error saving test plan:', err);
             const errorMsg = err.response?.data?.message || err.message || 'Failed to save test plan';
-            setError(errorMsg);
+
             toast.error(errorMsg);
         } finally {
             setSaving(false);
@@ -124,7 +122,7 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
 
     const handleClose = () => {
         setContent('');
-        setError(null);
+        
         onClose();
     };
 
@@ -182,10 +180,6 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
                     >
                         <CircularProgress />
                     </Box>
-                ) : error ? (
-                    <Alert severity="error" sx={{ mt: 2 }}>
-                        {error}
-                    </Alert>
                 ) : (
                     <Box sx={{ height: '100%' }}>
                         <TextField

@@ -14,8 +14,8 @@ const IssueList: React.FC = observer(() => {
 
 
     return (
-        <Card sx={{ borderRadius: '3px', position: 'sticky', top: 24 }}>
-            <CardContent sx={{ p: 2 }}>
+        <Card sx={{ borderRadius: '3px', height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <CardContent sx={{ p: 2, flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                     <Typography
                         variant="subtitle2"
@@ -57,11 +57,6 @@ const IssueList: React.FC = observer(() => {
                     )}
                 </Box>
                 <Divider sx={{ mb: 1 }} />
-                {issueStore.error && (
-                    <Typography color="error" variant="caption" sx={{ px: 1, mb: 1, display: 'block' }}>
-                        {issueStore.error}
-                    </Typography>
-                )}
                 <List sx={{ p: 0 }}>
                     {issueStore.issues.map((issue) => (
                         <ListItem

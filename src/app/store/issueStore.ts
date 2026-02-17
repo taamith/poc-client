@@ -93,10 +93,10 @@ class IssueStore {
                     this.isAuthenticated = false;
                     if (err.response?.status === 401) {
                         this.error = "Please log in to Jira";
+                        toast.error("Please log in to Jira");
                     } else {
-                        // Suppress generic connection error if we are on the login page
-                        // or if it's a silent check
                         this.error = "Connection Error. Ensure the backend is accessible.";
+                        toast.error("Connection Error. Ensure the backend is accessible.");
                     }
                 }
             });
@@ -192,6 +192,7 @@ class IssueStore {
                 const apiError = err.response?.data?.error || err.message || 'Failed to fetch issue details';
                 this.error = apiError;
                 this.loading = false;
+                toast.error(apiError);
             });
         }
     }

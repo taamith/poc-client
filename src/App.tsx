@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { ThemeProvider, CssBaseline, Container, Box, CircularProgress } from '@mui/material';
+import { ThemeProvider, CssBaseline, Container, Box, CircularProgress, Typography } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
@@ -49,9 +49,10 @@ const IssuesPage = observer(() => {
       <Container
         maxWidth="xl"
         sx={{
-          mt: { xs: 2, md: 4 },
-          mb: 4,
-          px: { xs: 2, md: 4 }
+          mt: { xs: 2, md: 3 },
+          px: { xs: 2, md: 4 },
+          flex: 1,
+          overflow: 'hidden',
         }}
       >
         <Box
@@ -59,7 +60,7 @@ const IssuesPage = observer(() => {
             display: 'grid',
             gridTemplateColumns: { xs: '1fr', lg: '400px 1fr' },
             gap: 3,
-            alignItems: 'start'
+            height: 'calc(100vh - 140px)',
           }}
         >
           <IssueList />
@@ -86,6 +87,25 @@ const App = observer(() => {
           <Route path="/issues" element={<IssuesPage />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
+        <Box
+          component="footer"
+          sx={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            py: 1.5,
+            textAlign: 'center',
+            bgcolor: 'rgba(255, 255, 255, 0.95)',
+            borderTop: '1px solid #DFE1E6',
+            backdropFilter: 'blur(8px)',
+            zIndex: 1000,
+          }}
+        >
+          <Typography variant="caption" sx={{ color: '#6B778C' }}>
+            © AutoSprint AI, BSC Solutions India Pvt Ltd © 2026
+          </Typography>
+        </Box>
       </ThemeProvider>
     </QueryClientProvider>
   );

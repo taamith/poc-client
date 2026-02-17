@@ -337,13 +337,6 @@ const LoginView: React.FC = observer(() => {
                         Launch {selectedProvider?.name || 'Provider'}
                     </Button>
 
-                    {/* Error Display */}
-                    {issueStore.error && (
-                        <Typography color="error" variant="caption">
-                            {issueStore.error}
-                        </Typography>
-                    )}
-
                     {/* Terms Text */}
                     <Typography variant="caption" sx={{ color: '#6B778C', lineHeight: 1.6 }}>
                         By signing in, you agree to our{' '}
