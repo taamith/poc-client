@@ -346,6 +346,10 @@ class IssueStore {
             const initialStatus = issue.test_cases_generated ? 'completed' : 'pending';
             this.batchProcessingStatus.set(issue.key, initialStatus);
         });
+        // Auto-show the first issue's details in the right pane
+        if (this.issues.length > 0) {
+            this.fetchIssueDetail(this.issues[0].key);
+        }
     }
 
     clearSelection() {

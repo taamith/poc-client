@@ -19,13 +19,11 @@ const IssuesPage = observer(() => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Only redirect after auth check has completed
     if (issueStore.authChecked && !issueStore.isAuthenticated) {
       navigate('/login', { replace: true });
     }
   }, [issueStore.authChecked, issueStore.isAuthenticated, navigate]);
 
-  // Show loading while auth check is in progress
   if (!issueStore.authChecked) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
@@ -51,8 +49,7 @@ const IssuesPage = observer(() => {
         sx={{
           mt: { xs: 2, md: 3 },
           px: { xs: 2, md: 4 },
-          flex: 1,
-          overflow: 'hidden',
+          pb: 6,
         }}
       >
         <Box
@@ -60,7 +57,7 @@ const IssuesPage = observer(() => {
             display: 'grid',
             gridTemplateColumns: { xs: '1fr', lg: '400px 1fr' },
             gap: 3,
-            height: 'calc(100vh - 140px)',
+            height: 'calc(100vh - 150px)',
           }}
         >
           <IssueList />
@@ -73,7 +70,6 @@ const IssuesPage = observer(() => {
 
 const App = observer(() => {
   useEffect(() => {
-    // On initial load, check if already authenticated (e.g. session still valid)
     issueStore.fetchIssues(true);
   }, []);
 
