@@ -46,17 +46,21 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ open, onClose, onProc
         onClose();
     };
 
+    const MAX_FILES = 20;
+
     const addFiles = (incoming: FileList | File[]) => {
         const pdfs = Array.from(incoming).filter((f) => f.type === 'application/pdf');
         if (pdfs.length === 0) {
             toast.error(ERRORS.PDF_ONLY);
             return;
         }
-        setFiles((prev) => {
-            const names = new Set(prev.map((f) => f.name));
-            const unique = pdfs.filter((f) => !names.has(f.name));
-            return [...prev, ...unique];
-        });
+        const names = new Set(files.map((f) => f.name));
+        const unique = pdfs.filter((f) => !names.has(f.name));
+        if (files.length + unique.length > MAX_FILES) {
+            toast.error(ERRORS.MAX_FILES(MAX_FILES));
+            return;
+        }
+        setFiles((prev) => [...prev, ...unique]);
     };
 
     const removeFile = (index: number) => {
@@ -122,7 +126,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ open, onClose, onProc
                 <Typography variant="h6" sx={{ fontWeight: 700, color: '#172B4D' }}>
                     {HEADERS.UPLOAD_DOCUMENTS}
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#5E6C84', display: 'block', mt: 0.5 }}>
+                <Typography variant="caption" sx={{ color: '#6B778C', display: 'block', mt: 0.5 }}>
                     {HEADERS.UPLOAD_SUBTITLE}
                 </Typography>
             </DialogTitle>
@@ -151,7 +155,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ open, onClose, onProc
                     <Typography variant="body1" sx={{ fontWeight: 600, color: '#172B4D' }}>
                         {PLACEHOLDERS.DRAG_DROP}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: '#5E6C84', mt: 0.5 }}>
+                    <Typography variant="body2" sx={{ color: '#6B778C', mt: 0.5 }}>
                         {PLACEHOLDERS.OR_BROWSE}
                     </Typography>
                     <input
@@ -169,7 +173,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ open, onClose, onProc
 
                 {files.length > 0 && (
                     <Box sx={{ mt: 2 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#5E6C84', mb: 1 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#6B778C', mb: 1 }}>
                             {PLACEHOLDERS.FILES_SELECTED(files.length)}
                         </Typography>
                         {files.map((file, idx) => (
@@ -194,7 +198,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ open, onClose, onProc
                                     >
                                         {file.name}
                                     </Typography>
-                                    <Typography variant="caption" sx={{ color: '#5E6C84' }}>
+                                    <Typography variant="caption" sx={{ color: '#6B778C' }}>
                                         {(file.size / 1024).toFixed(1)} KB
                                     </Typography>
                                     {uploading && fileProgress[idx] !== undefined && (

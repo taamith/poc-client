@@ -18,6 +18,7 @@ export const ERRORS = {
     PUBLISH_TO: (tool: string) => `Failed to publish to ${tool}`,
     DISCONNECT: 'Failed to disconnect',
     PDF_ONLY: 'Only PDF files are allowed',
+    MAX_FILES: (max: number) => `You can upload a maximum of ${max} files`,
 };
 
 // ─── Success Messages ────────────────────────────────────────────────

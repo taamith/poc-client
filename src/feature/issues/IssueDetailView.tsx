@@ -2,14 +2,13 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     Card,
-    CardContent,
     Typography,
     Box,
     CircularProgress,
-    Divider,
-    Stack,
+    Chip,
     Button,
     Backdrop,
+    Divider,
     Paper,
     ClickAwayListener,
     Dialog,
@@ -28,7 +27,6 @@ import { issueStore } from '../../app/store/issueStore';
 import { testPlanApi } from '../../lib/api/testPlanApi';
 import { toast } from 'sonner';
 import TestPlanEditorModal from './TestPlanEditorModal';
-import FileUploadModal from './FileUploadModal';
 import {
     ERRORS, SUCCESS, LOADING, BUTTONS, HEADERS, PLACEHOLDERS, CONFIRM, DEFAULTS, LABELS,
 } from '../../lib/constants/messages';
@@ -43,12 +41,19 @@ interface PublishTool {
 
 const publishTools: PublishTool[] = [
     { id: 'confluence', name: 'Confluence', icon: '📘' },
-    { id: 'sharepoint', name: 'SharePoint', icon: '📄' },
-    { id: 'notion', name: 'Notion', icon: '📝' },
-    { id: 'google-docs', name: 'Google Docs', icon: '📑' },
+    { id: 'azure-test-plans', name: 'Azure Test Plans', icon: '🔷' },
+    { id: 'testmo', name: 'TestMo', icon: '🧪' },
+    { id: 'qtest', name: 'Tricentis qTest', icon: '🔬' },
+    { id: 'zephyr', name: 'Zephyr', icon: '⚡' },
+    { id: 'hp-alm', name: 'HP ALM - QC', icon: '🏢' },
 ];
 
-const IssueDetailView: React.FC = observer(() => {
+interface IssueDetailViewProps {
+    mode?: 'dashboard' | 'testplans';
+}
+
+const IssueDetailView: React.FC<IssueDetailViewProps> = observer(({ mode = 'testplans' }) => {
+    const showActions = mode === 'testplans';
 
     const isLoading = issueStore.loading;
     const isProcessing = issueStore.isGeneratingPlan;
@@ -89,31 +94,8 @@ const IssueDetailView: React.FC = observer(() => {
         setIsQaApproved(false);
     };
 
-    const [uploadModalOpen, setUploadModalOpen] = React.useState(false);
-    const [pendingGenerateMode, setPendingGenerateMode] = React.useState<'single' | 'batch'>('single');
-
-    const handleGenerateClick = () => {
-        setPendingGenerateMode('single');
-        setUploadModalOpen(true);
-    };
-
-    const handleGenerateAllClick = () => {
-        setPendingGenerateMode('batch');
-        setUploadModalOpen(true);
-    };
-
-    const handleUploadComplete = () => {
-        setUploadModalOpen(false);
-        if (pendingGenerateMode === 'batch') {
-            issueStore.processBatch(BASE_URL);
-        } else {
-            issueStore.generateTestPlan(BASE_URL);
-        }
-    };
-
-    const handleUploadCancel = () => {
-        setUploadModalOpen(false);
-    };
+    const handleGenerateClick = () => issueStore.generateTestPlan(BASE_URL);
+    const handleGenerateAllClick = () => issueStore.processBatch(BASE_URL);
 
     const [publishDropdownOpen, setPublishDropdownOpen] = React.useState(false);
     const [confirmDialogOpen, setConfirmDialogOpen] = React.useState(false);
@@ -151,8 +133,8 @@ const IssueDetailView: React.FC = observer(() => {
 
     if (selectedCount === 0 && !isLoading) {
         return (
-            <Card sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 4, borderRadius: '3px', overflow: 'auto' }}>
-                <Typography variant="body1" color="text.secondary" fontWeight={500}>
+            <Card sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 4, overflow: 'auto' }}>
+                <Typography variant="body1" sx={{ color: '#6B778C', fontWeight: 500 }}>
                     {PLACEHOLDERS.SELECT_ISSUES}
                 </Typography>
             </Card>
@@ -177,14 +159,14 @@ const IssueDetailView: React.FC = observer(() => {
     const hasTestPlan = !!issue?.test_cases_generated;
 
     return (
-        <Card sx={{ height: '100%', borderRadius: '3px', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        <Card sx={{ height: '100%', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', border: '1px solid #DFE1E6' }}>
             {isLoading && !isBatch && (
                 <Backdrop
                     sx={{
                         color: '#fff',
                         zIndex: (theme) => theme.zIndex.drawer + 1,
                         position: 'absolute',
-                        borderRadius: '3px',
+                        borderRadius: '12px',
                         bgcolor: 'rgba(255, 255, 255, 0.7)'
                     }}
                     open={isLoading}
@@ -193,28 +175,42 @@ const IssueDetailView: React.FC = observer(() => {
                 </Backdrop>
             )}
 
-            <CardContent sx={{ p: 4, flex: 1, overflow: 'auto' }}>
-                <Stack spacing={3}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <Box>
-                            <Typography variant="caption" sx={{ color: '#5a1196', fontWeight: 700, mb: 0.5, display: 'block' }}>
-                                {storyLabel}
-                            </Typography>
-                            <Typography variant="h5" sx={{ fontWeight: 700, color: '#172B4D', lineHeight: 1.2 }}>
-                                {issue?.summary}
-                            </Typography>
-                        </Box>
+            {/* ── Header ── */}
+            <Box sx={{ px: 3, py: 2, bgcolor: '#F8F9FA', borderBottom: '1px solid #DFE1E6', flexShrink: 0 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography variant="caption" sx={{ color: '#5a1196', fontWeight: 700, letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>
+                            {storyLabel}
+                        </Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 700, color: '#172B4D', lineHeight: 1.3, wordBreak: 'break-word' }}>
+                            {issue?.summary}
+                        </Typography>
+                        {hasTestPlan && (
+                            <Chip
+                                label={issue?.is_qa_approved ? 'QA Approved' : 'Test Plan Ready'}
+                                size="small"
+                                sx={{
+                                    mt: 1,
+                                    height: 22,
+                                    fontSize: '11px',
+                                    fontWeight: 700,
+                                    bgcolor: issue?.is_qa_approved ? '#E3FCEF' : 'rgba(90,17,150,0.08)',
+                                    color: issue?.is_qa_approved ? '#006644' : '#5a1196',
+                                    border: `1px solid ${issue?.is_qa_approved ? '#ABF5D1' : 'rgba(90,17,150,0.25)'}`,
+                                }}
+                            />
+                        )}
+                    </Box>
 
+                    {showActions && (
                         <Box sx={{ display: 'flex', gap: 1, flexShrink: 0, alignItems: 'center' }}>
                             {hasTestPlan ? (
                                 <Button
                                     variant="contained"
                                     size="small"
                                     startIcon={issue!.is_qa_approved ? <VisibilityIcon /> : <EditIcon />}
-                                    onClick={() => {
-                                        handleOpenTestPlan(issue!.test_case_filename || '', issue!.is_qa_approved || false);
-                                    }}
-                                    sx={{ bgcolor: '#5a1196', '&:hover': { bgcolor: '#660f89' }, textTransform: 'none', fontWeight: 600 }}
+                                    onClick={() => handleOpenTestPlan(issue!.test_case_filename || '', issue!.is_qa_approved || false)}
+                                    sx={{ bgcolor: '#5a1196', '&:hover': { bgcolor: '#660f89' }, textTransform: 'none', fontWeight: 600, borderRadius: '8px' }}
                                 >
                                     {issue!.is_qa_approved ? BUTTONS.VIEW : BUTTONS.EDIT}
                                 </Button>
@@ -222,10 +218,10 @@ const IssueDetailView: React.FC = observer(() => {
                                 <Button
                                     variant="contained"
                                     size="small"
-                                    startIcon={isProcessing ? <CircularProgress size={18} color="inherit" /> : <PlayArrowIcon />}
+                                    startIcon={isProcessing ? <CircularProgress size={16} color="inherit" /> : <PlayArrowIcon />}
                                     onClick={handleGenerateAllClick}
                                     disabled={isProcessing}
-                                    sx={{ bgcolor: '#172B4D', '&:hover': { bgcolor: '#253858' }, textTransform: 'none', fontWeight: 600 }}
+                                    sx={{ bgcolor: '#172B4D', '&:hover': { bgcolor: '#253858' }, textTransform: 'none', fontWeight: 600, borderRadius: '8px' }}
                                 >
                                     {isProcessing ? LOADING.GENERATING : BUTTONS.GENERATE_ALL(pendingCount)}
                                 </Button>
@@ -233,10 +229,10 @@ const IssueDetailView: React.FC = observer(() => {
                                 <Button
                                     variant="contained"
                                     size="small"
-                                    startIcon={isProcessing ? <CircularProgress size={18} color="inherit" /> : <PlayArrowIcon />}
+                                    startIcon={isProcessing ? <CircularProgress size={16} color="inherit" /> : <PlayArrowIcon />}
                                     onClick={handleGenerateClick}
                                     disabled={isProcessing}
-                                    sx={{ bgcolor: '#3614b2', '&:hover': { bgcolor: '#4a12a4' }, textTransform: 'none', fontWeight: 600 }}
+                                    sx={{ bgcolor: '#5a1196', '&:hover': { bgcolor: '#4a12a4' }, textTransform: 'none', fontWeight: 600, borderRadius: '8px' }}
                                 >
                                     {isProcessing ? LOADING.GENERATING : BUTTONS.GENERATE}
                                 </Button>
@@ -255,54 +251,24 @@ const IssueDetailView: React.FC = observer(() => {
                                                 fontWeight: 600,
                                                 borderColor: '#5a1196',
                                                 color: '#5a1196',
+                                                borderRadius: '8px',
                                                 '&:hover': { borderColor: '#4a0e80', bgcolor: 'rgba(90,17,150,0.04)' },
                                             }}
                                         >
                                             {BUTTONS.PUBLISH_TO}
                                         </Button>
-
                                         {publishDropdownOpen && (
                                             <Paper
                                                 elevation={4}
-                                                sx={{
-                                                    position: 'absolute',
-                                                    top: '100%',
-                                                    right: 0,
-                                                    mt: 0.5,
-                                                    borderRadius: '10px',
-                                                    border: '1px solid #DFE1E6',
-                                                    zIndex: 10,
-                                                    overflow: 'hidden',
-                                                    minWidth: 220,
-                                                }}
+                                                sx={{ position: 'absolute', top: '100%', right: 0, mt: 0.5, borderRadius: '10px', border: '1px solid #DFE1E6', zIndex: 10, overflow: 'hidden', minWidth: 220 }}
                                             >
                                                 {publishTools.map((tool) => (
                                                     <Box
                                                         key={tool.id}
                                                         onClick={() => handleToolSelect(tool)}
-                                                        sx={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: 1.5,
-                                                            px: 1.5,
-                                                            py: 1.2,
-                                                            cursor: 'pointer',
-                                                            transition: 'background-color 0.15s',
-                                                            '&:hover': { bgcolor: '#F4F5F7' },
-                                                        }}
+                                                        sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 1.5, py: 1.2, cursor: 'pointer', '&:hover': { bgcolor: '#F4F5F7' } }}
                                                     >
-                                                        <Box
-                                                            sx={{
-                                                                width: 36,
-                                                                height: 36,
-                                                                borderRadius: '8px',
-                                                                bgcolor: '#E8F0FE',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                fontSize: '1.2rem',
-                                                            }}
-                                                        >
+                                                        <Box sx={{ width: 32, height: 32, borderRadius: '8px', bgcolor: '#EEE8FA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>
                                                             {tool.icon}
                                                         </Box>
                                                         <Typography variant="body2" sx={{ fontWeight: 600, color: '#172B4D' }}>
@@ -316,68 +282,61 @@ const IssueDetailView: React.FC = observer(() => {
                                 </ClickAwayListener>
                             )}
                         </Box>
-                    </Box>
+                    )}
+                </Box>
+            </Box>
 
-                    <Divider />
-
-                    {issue && (
-                        <Box>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#5E6C84', mb: 1.5, textTransform: 'uppercase' }}>
-                                {HEADERS.DESCRIPTION}
-                            </Typography>
-                            <Typography variant="body1" sx={{ color: '#172B4D', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+            {/* ── Content ── */}
+            <Box sx={{ flex: 1, overflow: 'auto', px: 3, py: 2.5 }}>
+                {issue && (
+                    <Box>
+                        <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#6B778C', letterSpacing: '0.06em', textTransform: 'uppercase', mb: 1 }}>
+                            {HEADERS.DESCRIPTION}
+                        </Typography>
+                        <Box sx={{ p: 2, bgcolor: '#FAFBFC', border: '1px solid #EBECF0', borderRadius: '8px' }}>
+                            <Typography variant="body2" sx={{ color: '#172B4D', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
                                 {issue.description || DEFAULTS.NO_DESCRIPTION_DISPLAY}
                             </Typography>
                         </Box>
-                    )}
+                    </Box>
+                )}
 
-                    {issueStore.generationMessage && !isBatch && (
-                        <Typography variant="body2" sx={{ color: '#5a1196', fontWeight: 600, mt: 2 }}>
+                {showActions && issueStore.generationMessage && !isBatch && (
+                    <Box sx={{ mt: 2, p: 1.5, bgcolor: 'rgba(90,17,150,0.06)', border: '1px solid rgba(90,17,150,0.2)', borderRadius: '8px' }}>
+                        <Typography variant="body2" sx={{ color: '#5a1196', fontWeight: 600 }}>
                             {issueStore.generationMessage}
                         </Typography>
-                    )}
-
-                </Stack>
-            </CardContent>
+                    </Box>
+                )}
+            </Box>
 
             {isBatch && (
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1, px: 3, py: 1.5, borderTop: '1px solid #DFE1E6', flexShrink: 0 }}>
+                <>
+                <Divider />
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1, px: 3, py: 1.5, flexShrink: 0 }}>
                     <Typography variant="caption" sx={{ color: '#6B778C', fontWeight: 600, mr: 0.5 }}>
                         {currentIndex + 1} / {selectedKeysArray.length}
                     </Typography>
-                    <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={handlePrev}
-                        disabled={!hasPrev}
-                        sx={{ minWidth: 36, px: 0, borderColor: '#DFE1E6', color: '#5a1196', '&:hover': { borderColor: '#5a1196' } }}
-                    >
+                    <Button size="small" variant="outlined" onClick={handlePrev} disabled={!hasPrev}
+                        sx={{ minWidth: 36, px: 0, borderColor: '#DFE1E6', color: '#5a1196', borderRadius: '8px', '&:hover': { borderColor: '#5a1196' } }}>
                         <ChevronLeftIcon />
                     </Button>
-                    <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={handleNext}
-                        disabled={!hasNext}
-                        sx={{ minWidth: 36, px: 0, borderColor: '#DFE1E6', color: '#5a1196', '&:hover': { borderColor: '#5a1196' } }}
-                    >
+                    <Button size="small" variant="outlined" onClick={handleNext} disabled={!hasNext}
+                        sx={{ minWidth: 36, px: 0, borderColor: '#DFE1E6', color: '#5a1196', borderRadius: '8px', '&:hover': { borderColor: '#5a1196' } }}>
                         <ChevronRightIcon />
                     </Button>
                 </Box>
+                </>
             )}
 
+            {showActions && (
+            <>
             <TestPlanEditorModal
                 open={modalOpen}
                 onClose={handleCloseModal}
                 filename={selectedFilename}
                 isQaApproved={isQaApproved}
                 issueTitle={issue?.summary}
-            />
-
-            <FileUploadModal
-                open={uploadModalOpen}
-                onClose={handleUploadCancel}
-                onProceed={handleUploadComplete}
             />
 
             <Dialog
@@ -415,7 +374,7 @@ const IssueDetailView: React.FC = observer(() => {
                         {CONFIRM.PUBLISH(issue?.key || '', selectedTool?.name || '')}
                     </Typography>
                     <Box sx={{ mt: 2, p: 1.5, bgcolor: '#F4F5F7', borderRadius: '6px' }}>
-                        <Typography variant="caption" sx={{ color: '#5E6C84', fontWeight: 600 }}>
+                        <Typography variant="caption" sx={{ color: '#6B778C', fontWeight: 600 }}>
                             {HEADERS.FILE}
                         </Typography>
                         <Typography variant="body2" sx={{ color: '#172B4D', fontWeight: 600, mt: 0.25, wordBreak: 'break-all' }}>
@@ -454,6 +413,8 @@ const IssueDetailView: React.FC = observer(() => {
                     </Button>
                 </DialogActions>
             </Dialog>
+            </>
+            )}
         </Card >
     );
 });

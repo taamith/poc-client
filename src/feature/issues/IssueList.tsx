@@ -1,6 +1,6 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
-import { Card, CardContent, Typography, List, ListItem, ListItemText, ListItemButton, CircularProgress, Box, Divider, Checkbox } from '@mui/material';
+import { Card, CardContent, Typography, List, ListItem, ListItemText, ListItemButton, CircularProgress, Box, Divider, Checkbox, Chip } from '@mui/material';
 import { issueStore } from '../../app/store/issueStore';
 import { HEADERS, PLACEHOLDERS } from '../../lib/constants/messages';
 
@@ -13,22 +13,24 @@ const IssueList: React.FC = observer(() => {
         );
     }
 
-
     return (
-        <Card sx={{ borderRadius: '3px', height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <CardContent sx={{ p: 2, flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography
-                        variant="subtitle2"
-                        sx={{
-                            fontWeight: 700,
-                            color: '#5E6C84',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.05em'
-                        }}
-                    >
-                        {HEADERS.USER_STORIES(issueStore.issues.length)}
-                    </Typography>
+        <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <Box sx={{ px: 2.5, pt: 2.5, pb: 1.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography
+                            variant="subtitle2"
+                            sx={{
+                                fontWeight: 700,
+                                color: '#172B4D',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.06em',
+                                fontSize: '11px',
+                            }}
+                        >
+                            {HEADERS.USER_STORIES(issueStore.issues.length)}
+                        </Typography>
+                    </Box>
                     {issueStore.issues.length > 0 && (
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <Checkbox
@@ -48,16 +50,18 @@ const IssueList: React.FC = observer(() => {
                                         issueStore.selectAllIssues();
                                     }
                                 }}
-                                sx={{ p: 0.5, color: '#5E6C84' }}
+                                sx={{ p: 0.5, color: '#6B778C', '&.Mui-checked': { color: '#5a1196' } }}
                                 id="select-all-stories"
                             />
-                            <Typography variant="caption" sx={{ color: '#5E6C84', fontWeight: 600 }}>
+                            <Typography variant="caption" sx={{ color: '#6B778C', fontWeight: 600, fontSize: '11px' }}>
                                 {HEADERS.SELECT_ALL}
                             </Typography>
                         </Box>
                     )}
                 </Box>
-                <Divider sx={{ mb: 1 }} />
+            </Box>
+            <Divider sx={{ borderColor: '#DFE1E6' }} />
+            <CardContent sx={{ p: 0, flex: 1, overflow: 'auto' }}>
                 <List sx={{ p: 0 }}>
                     {issueStore.issues.map((issue) => (
                         <ListItem
@@ -65,15 +69,15 @@ const IssueList: React.FC = observer(() => {
                             disablePadding
                             sx={{
                                 borderBottom: '1px solid #EBECF0',
-                                '&:last-child': { borderBottom: 'none' }
+                                '&:last-child': { borderBottom: 'none' },
                             }}
                         >
-                            <Box sx={{ display: 'flex', width: '100%', alignItems: 'center', pr: 1 }}>
+                            <Box sx={{ display: 'flex', width: '100%', alignItems: 'center' }}>
                                 <Checkbox
                                     size="small"
                                     checked={issueStore.selectedIssueKeys.has(issue.key)}
                                     onChange={() => issueStore.toggleIssueSelection(issue.key)}
-                                    sx={{ ml: 1, color: '#6B778C' }}
+                                    sx={{ ml: 1.5, color: '#B3BAC5', '&.Mui-checked': { color: '#5a1196' } }}
                                     id={`checkbox-${issue.key}`}
                                 />
                                 <ListItemButton
@@ -81,15 +85,18 @@ const IssueList: React.FC = observer(() => {
                                     onClick={() => issueStore.toggleIssueSelection(issue.key)}
                                     sx={{
                                         py: 1.5,
+                                        px: 1.5,
                                         flexGrow: 1,
+                                        borderRadius: 0,
                                         '&.Mui-selected': {
-                                            bgcolor: 'rgba(54, 20, 178, 0.08)',
-                                            borderLeft: '3px solid #3614b2',
-                                            '&:hover': { bgcolor: 'rgba(54, 20, 178, 0.12)' }
-                                        }
+                                            bgcolor: '#E8F0FE',
+                                            borderLeft: '3px solid #5a1196',
+                                            '&:hover': { bgcolor: '#E8F0FE' },
+                                        },
+                                        '&:hover': { bgcolor: '#F4F5F7' },
                                     }}
                                 >
-                                    <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 0.5 }}>
                                         <ListItemText
                                             primary={issue.summary}
                                             secondary={issue.key}
@@ -97,33 +104,31 @@ const IssueList: React.FC = observer(() => {
                                                 variant: 'body2',
                                                 fontWeight: 600,
                                                 color: '#172B4D',
-                                                noWrap: true
+                                                noWrap: true,
+                                                fontSize: '13px',
                                             }}
                                             secondaryTypographyProps={{
                                                 variant: 'caption',
-                                                fontWeight: 700,
-                                                color: '#6B778C'
+                                                fontWeight: 600,
+                                                color: '#6B778C',
+                                                fontSize: '11px',
                                             }}
                                         />
-                                        {/* Status indicator */}
                                         {issue.test_cases_generated && (
-                                            <Box
+                                            <Chip
+                                                label={PLACEHOLDERS.TEST_PLAN_READY}
+                                                size="small"
                                                 sx={{
-                                                    mt: 0.5,
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    bgcolor: 'rgba(90, 17, 150, 0.1)',
-                                                    color: '#5a1196',
-                                                    px: 1,
-                                                    py: 0.25,
-                                                    borderRadius: '3px',
-                                                    fontSize: '11px',
+                                                    alignSelf: 'flex-start',
+                                                    height: 20,
+                                                    fontSize: '10px',
                                                     fontWeight: 700,
-                                                    alignSelf: 'flex-start'
+                                                    bgcolor: 'rgba(90, 17, 150, 0.08)',
+                                                    color: '#5a1196',
+                                                    border: '1px solid rgba(90, 17, 150, 0.25)',
+                                                    '& .MuiChip-label': { px: 1 },
                                                 }}
-                                            >
-                                                {PLACEHOLDERS.TEST_PLAN_READY}
-                                            </Box>
+                                            />
                                         )}
                                     </Box>
                                 </ListItemButton>
@@ -131,9 +136,11 @@ const IssueList: React.FC = observer(() => {
                         </ListItem>
                     ))}
                     {issueStore.issues.length === 0 && !issueStore.loading && (
-                        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                            {PLACEHOLDERS.NO_STORIES}
-                        </Typography>
+                        <Box sx={{ py: 6, textAlign: 'center' }}>
+                            <Typography variant="body2" sx={{ color: '#6B778C' }}>
+                                {PLACEHOLDERS.NO_STORIES}
+                            </Typography>
+                        </Box>
                     )}
                 </List>
             </CardContent>

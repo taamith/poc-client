@@ -36,7 +36,7 @@ const LoginView: React.FC = observer(() => {
 
     useEffect(() => {
         if (issueStore.isAuthenticated) {
-            navigate('/issues', { replace: true });
+            navigate('/dashboard', { replace: true });
         }
     }, [issueStore.isAuthenticated, navigate]);
 
@@ -63,7 +63,7 @@ const LoginView: React.FC = observer(() => {
                     setIsAuthenticating(false);
                     const success = await issueStore.fetchIssues();
                     if (success) {
-                        navigate('/issues', { replace: true });
+                        navigate('/dashboard', { replace: true });
                     }
                     return;
                 }
@@ -73,7 +73,7 @@ const LoginView: React.FC = observer(() => {
                     clearInterval(timer);
                     setIsAuthenticating(false);
                     try { popup.close(); } catch (_) { /* cross-origin */ }
-                    navigate('/issues', { replace: true });
+                    navigate('/dashboard', { replace: true });
                 }
             }, 2000);
         }
@@ -103,7 +103,7 @@ const LoginView: React.FC = observer(() => {
                     flexDirection: 'column',
                     gap: 2,
                     bgcolor: 'rgba(9, 30, 66, 0.54)',
-                    backdropFilter: 'blur(4px)',
+                    backdropFilter: 'blur(8px)',
                 }}
                 open={isAuthenticating}
             >
