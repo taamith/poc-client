@@ -9,9 +9,7 @@ const api = axios.create({
 });
 
 export const jiraApi = {
-    authJira: (authUrl: string) => {
-        return window.open(authUrl, 'jira-oauth', 'width=600,height=700');
-    },
+    authJira: (authUrl: string) => window.open(authUrl, 'jira-oauth', 'width=600,height=700'),
     disconnect: () => api.post('/disconnect'),
     fetchIssues: () => api.post('/issues'),
     fetchIssueDetail: (issueKey: string) => api.post('/issue', { issue_key: issueKey }),

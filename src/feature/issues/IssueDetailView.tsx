@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     Card,
@@ -15,6 +15,8 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
+    IconButton,
+    LinearProgress,
 } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -23,8 +25,14 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
+import DeleteIcon from '@mui/icons-material/Delete';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { issueStore } from '../../app/store/issueStore';
 import { testPlanApi } from '../../lib/api/testPlanApi';
+import { uploadFiles } from '../../lib/api/uploadApi';
+import { getApiErrorMessage } from '../../lib/api/errors';
 import { toast } from 'sonner';
 import TestPlanEditorModal from './TestPlanEditorModal';
 import {
@@ -94,8 +102,10 @@ const IssueDetailView: React.FC<IssueDetailViewProps> = observer(({ mode = 'test
         setIsQaApproved(false);
     };
 
-    const handleGenerateClick = () => issueStore.generateTestPlan(BASE_URL);
-    const handleGenerateAllClick = () => issueStore.processBatch(BASE_URL);
+    const [generateDialogOpen, setGenerateDialogOpen] = React.useState(false);
+
+    const handleGenerateClick = () => setGenerateDialogOpen(true);
+    const handleGenerateAllClick = () => setGenerateDialogOpen(true);
 
     const [publishDropdownOpen, setPublishDropdownOpen] = React.useState(false);
     const [confirmDialogOpen, setConfirmDialogOpen] = React.useState(false);
@@ -119,7 +129,7 @@ const IssueDetailView: React.FC<IssueDetailViewProps> = observer(({ mode = 'test
             setSelectedTool(null);
         } catch (err: any) {
             console.error('Publish error:', err);
-            const errorMsg = err.response?.data?.message || err.message || ERRORS.PUBLISH_TO(selectedTool.name);
+            const errorMsg = getApiErrorMessage(err, ERRORS.PUBLISH_TO(selectedTool.name));
             toast.error(errorMsg);
         } finally {
             setIsPublishing(false);
@@ -129,6 +139,59 @@ const IssueDetailView: React.FC<IssueDetailViewProps> = observer(({ mode = 'test
     const handleCancelPublish = () => {
         setConfirmDialogOpen(false);
         setSelectedTool(null);
+    };
+
+    // ── Optional file upload ──
+    const [optFiles, setOptFiles] = React.useState<File[]>([]);
+    const [optDragOver, setOptDragOver] = React.useState(false);
+    const [optUploading, setOptUploading] = React.useState(false);
+    const [optDone, setOptDone] = React.useState(false);
+    const [optProgress, setOptProgress] = React.useState<Record<number, number>>({});
+    const optInputRef = React.useRef<HTMLInputElement>(null);
+
+    React.useEffect(() => {
+        setOptFiles([]);
+        setOptDone(false);
+        setOptProgress({});
+    }, [issue?.key]);
+
+    const addOptFiles = (incoming: FileList | File[]) => {
+        const pdfs = Array.from(incoming).filter((f) => f.type === 'application/pdf');
+        if (pdfs.length === 0) { toast.error(ERRORS.PDF_ONLY); return; }
+        const names = new Set(optFiles.map((f) => f.name));
+        const unique = pdfs.filter((f) => !names.has(f.name));
+        setOptDone(false);
+        setOptFiles((prev) => [...prev, ...unique]);
+    };
+
+    const handleCancelGenerate = () => {
+        setGenerateDialogOpen(false);
+        setOptFiles([]);
+        setOptDone(false);
+        setOptProgress({});
+    };
+
+    const handleConfirmGenerate = async () => {
+        if (optFiles.length > 0) {
+            setOptUploading(true);
+            setOptProgress({});
+            try {
+                await uploadFiles(optFiles, (idx, pct) => setOptProgress((prev) => ({ ...prev, [idx]: pct })));
+                toast.success(SUCCESS.FILES_UPLOADED(optFiles.length));
+                setOptDone(true);
+            } catch (err: any) {
+                toast.error(getApiErrorMessage(err, ERRORS.UPLOAD_FILES));
+                setOptUploading(false);
+                return;
+            }
+            setOptUploading(false);
+        }
+        setGenerateDialogOpen(false);
+        if (isBatch && pendingCount > 0) {
+            issueStore.processBatch(BASE_URL);
+        } else {
+            issueStore.generateTestPlan(BASE_URL);
+        }
     };
 
     if (selectedCount === 0 && !isLoading) {
@@ -179,7 +242,7 @@ const IssueDetailView: React.FC<IssueDetailViewProps> = observer(({ mode = 'test
             <Box sx={{ px: 3, py: 2, bgcolor: '#F8F9FA', borderBottom: '1px solid #DFE1E6', flexShrink: 0 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography variant="caption" sx={{ color: '#5a1196', fontWeight: 700, letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>
+                        <Typography variant="caption" sx={{ color: '#1877F2', fontWeight: 700, letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>
                             {storyLabel}
                         </Typography>
                         <Typography variant="h6" sx={{ fontWeight: 700, color: '#172B4D', lineHeight: 1.3, wordBreak: 'break-word' }}>
@@ -194,9 +257,9 @@ const IssueDetailView: React.FC<IssueDetailViewProps> = observer(({ mode = 'test
                                     height: 22,
                                     fontSize: '11px',
                                     fontWeight: 700,
-                                    bgcolor: issue?.is_qa_approved ? '#E3FCEF' : 'rgba(90,17,150,0.08)',
-                                    color: issue?.is_qa_approved ? '#006644' : '#5a1196',
-                                    border: `1px solid ${issue?.is_qa_approved ? '#ABF5D1' : 'rgba(90,17,150,0.25)'}`,
+                                    bgcolor: issue?.is_qa_approved ? '#E3FCEF' : 'rgba(24,119,242,0.08)',
+                                    color: issue?.is_qa_approved ? '#006644' : '#1877F2',
+                                    border: `1px solid ${issue?.is_qa_approved ? '#ABF5D1' : 'rgba(24,119,242,0.25)'}`,
                                 }}
                             />
                         )}
@@ -210,7 +273,7 @@ const IssueDetailView: React.FC<IssueDetailViewProps> = observer(({ mode = 'test
                                     size="small"
                                     startIcon={issue!.is_qa_approved ? <VisibilityIcon /> : <EditIcon />}
                                     onClick={() => handleOpenTestPlan(issue!.test_case_filename || '', issue!.is_qa_approved || false)}
-                                    sx={{ bgcolor: '#5a1196', '&:hover': { bgcolor: '#660f89' }, textTransform: 'none', fontWeight: 600, borderRadius: '8px' }}
+                                    sx={{ bgcolor: '#1877F2', '&:hover': { bgcolor: '#1468D8' }, textTransform: 'none', fontWeight: 600, borderRadius: '8px' }}
                                 >
                                     {issue!.is_qa_approved ? BUTTONS.VIEW : BUTTONS.EDIT}
                                 </Button>
@@ -232,7 +295,7 @@ const IssueDetailView: React.FC<IssueDetailViewProps> = observer(({ mode = 'test
                                     startIcon={isProcessing ? <CircularProgress size={16} color="inherit" /> : <PlayArrowIcon />}
                                     onClick={handleGenerateClick}
                                     disabled={isProcessing}
-                                    sx={{ bgcolor: '#5a1196', '&:hover': { bgcolor: '#4a12a4' }, textTransform: 'none', fontWeight: 600, borderRadius: '8px' }}
+                                    sx={{ bgcolor: '#1877F2', '&:hover': { bgcolor: '#0A52C4' }, textTransform: 'none', fontWeight: 600, borderRadius: '8px' }}
                                 >
                                     {isProcessing ? LOADING.GENERATING : BUTTONS.GENERATE}
                                 </Button>
@@ -249,10 +312,10 @@ const IssueDetailView: React.FC<IssueDetailViewProps> = observer(({ mode = 'test
                                             sx={{
                                                 textTransform: 'none',
                                                 fontWeight: 600,
-                                                borderColor: '#5a1196',
-                                                color: '#5a1196',
+                                                borderColor: '#1877F2',
+                                                color: '#1877F2',
                                                 borderRadius: '8px',
-                                                '&:hover': { borderColor: '#4a0e80', bgcolor: 'rgba(90,17,150,0.04)' },
+                                                '&:hover': { borderColor: '#4a0e80', bgcolor: 'rgba(24,119,242,0.04)' },
                                             }}
                                         >
                                             {BUTTONS.PUBLISH_TO}
@@ -302,8 +365,8 @@ const IssueDetailView: React.FC<IssueDetailViewProps> = observer(({ mode = 'test
                 )}
 
                 {showActions && issueStore.generationMessage && !isBatch && (
-                    <Box sx={{ mt: 2, p: 1.5, bgcolor: 'rgba(90,17,150,0.06)', border: '1px solid rgba(90,17,150,0.2)', borderRadius: '8px' }}>
-                        <Typography variant="body2" sx={{ color: '#5a1196', fontWeight: 600 }}>
+                    <Box sx={{ mt: 2, p: 1.5, bgcolor: 'rgba(24,119,242,0.06)', border: '1px solid rgba(24,119,242,0.2)', borderRadius: '8px' }}>
+                        <Typography variant="body2" sx={{ color: '#1877F2', fontWeight: 600 }}>
                             {issueStore.generationMessage}
                         </Typography>
                     </Box>
@@ -318,11 +381,11 @@ const IssueDetailView: React.FC<IssueDetailViewProps> = observer(({ mode = 'test
                         {currentIndex + 1} / {selectedKeysArray.length}
                     </Typography>
                     <Button size="small" variant="outlined" onClick={handlePrev} disabled={!hasPrev}
-                        sx={{ minWidth: 36, px: 0, borderColor: '#DFE1E6', color: '#5a1196', borderRadius: '8px', '&:hover': { borderColor: '#5a1196' } }}>
+                        sx={{ minWidth: 36, px: 0, borderColor: '#DFE1E6', color: '#1877F2', borderRadius: '8px', '&:hover': { borderColor: '#1877F2' } }}>
                         <ChevronLeftIcon />
                     </Button>
                     <Button size="small" variant="outlined" onClick={handleNext} disabled={!hasNext}
-                        sx={{ minWidth: 36, px: 0, borderColor: '#DFE1E6', color: '#5a1196', borderRadius: '8px', '&:hover': { borderColor: '#5a1196' } }}>
+                        sx={{ minWidth: 36, px: 0, borderColor: '#DFE1E6', color: '#1877F2', borderRadius: '8px', '&:hover': { borderColor: '#1877F2' } }}>
                         <ChevronRightIcon />
                     </Button>
                 </Box>
@@ -338,6 +401,105 @@ const IssueDetailView: React.FC<IssueDetailViewProps> = observer(({ mode = 'test
                 isQaApproved={isQaApproved}
                 issueTitle={issue?.summary}
             />
+
+            {/* ── Generate dialog ── */}
+            <Dialog
+                open={generateDialogOpen}
+                onClose={handleCancelGenerate}
+                maxWidth="sm"
+                fullWidth
+                slotProps={{ paper: { sx: { borderRadius: '12px' } } }}
+            >
+                <DialogTitle sx={{ bgcolor: '#F8F9FA', borderBottom: '1px solid #DFE1E6', pb: 2 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 700, color: '#172B4D', fontSize: '1.05rem' }}>
+                        Generate Test Plan
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#6B778C', mt: 0.5 }}>
+                        Optionally attach supporting documents before generating.
+                    </Typography>
+                </DialogTitle>
+
+                <DialogContent sx={{ pt: 2.5, pb: 2 }}>
+                    <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#6B778C', letterSpacing: '0.06em', textTransform: 'uppercase', mb: 1.5 }}>
+                        Supporting Documents
+                        <Box component="span" sx={{ fontWeight: 400, textTransform: 'none', fontSize: '10px', ml: 0.75 }}>(optional)</Box>
+                    </Typography>
+
+                    {/* Drop zone */}
+                    <Box
+                        onDrop={(e) => { e.preventDefault(); setOptDragOver(false); if (e.dataTransfer.files.length) addOptFiles(e.dataTransfer.files); }}
+                        onDragOver={(e) => { e.preventDefault(); setOptDragOver(true); }}
+                        onDragLeave={() => setOptDragOver(false)}
+                        onClick={() => !optUploading && optInputRef.current?.click()}
+                        sx={{
+                            border: '2px dashed',
+                            borderColor: optDragOver ? '#1877F2' : '#DFE1E6',
+                            borderRadius: '10px',
+                            bgcolor: optDragOver ? 'rgba(24,119,242,0.04)' : '#FAFBFC',
+                            py: 3,
+                            textAlign: 'center',
+                            cursor: optUploading ? 'default' : 'pointer',
+                            transition: 'all 0.2s',
+                            '&:hover': optUploading ? {} : { borderColor: '#1877F2', bgcolor: 'rgba(24,119,242,0.04)' },
+                        }}
+                    >
+                        <CloudUploadIcon sx={{ fontSize: 36, color: '#1877F2', mb: 0.5 }} />
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: '#172B4D' }}>
+                            Drag & drop PDFs or click to browse
+                        </Typography>
+                        <input
+                            ref={optInputRef}
+                            type="file"
+                            accept="application/pdf"
+                            multiple
+                            hidden
+                            onChange={(e) => { if (e.target.files) addOptFiles(e.target.files); e.target.value = ''; }}
+                        />
+                    </Box>
+
+                    {/* File list */}
+                    {optFiles.length > 0 && (
+                        <Box sx={{ mt: 1.5 }}>
+                            {optFiles.map((file, idx) => (
+                                <Box key={file.name} sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.75, px: 1.5, mb: 0.5, bgcolor: '#FFFFFF', border: '1px solid #EBECF0', borderRadius: '6px' }}>
+                                    <InsertDriveFileIcon sx={{ color: '#1877F2', fontSize: 16, flexShrink: 0 }} />
+                                    <Typography variant="caption" sx={{ fontWeight: 600, color: '#172B4D', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {file.name}
+                                    </Typography>
+                                    {optUploading && optProgress[idx] !== undefined
+                                        ? <LinearProgress variant="determinate" value={optProgress[idx]} sx={{ width: 60, height: 3, borderRadius: 2, '& .MuiLinearProgress-bar': { bgcolor: '#1877F2' } }} />
+                                        : optDone
+                                            ? <CheckCircleIcon sx={{ color: '#00875A', fontSize: 16 }} />
+                                            : <IconButton size="small" onClick={() => setOptFiles((prev) => prev.filter((_, i) => i !== idx))}>
+                                                <DeleteIcon sx={{ fontSize: 14, color: '#6B778C' }} />
+                                            </IconButton>
+                                    }
+                                </Box>
+                            ))}
+                        </Box>
+                    )}
+                </DialogContent>
+
+                <DialogActions sx={{ px: 3, py: 2, bgcolor: '#F8F9FA', borderTop: '1px solid #DFE1E6' }}>
+                    <Button
+                        onClick={handleCancelGenerate}
+                        variant="outlined"
+                        disabled={optUploading}
+                        sx={{ textTransform: 'none', fontWeight: 600, borderColor: '#DFE1E6', color: '#42526E', '&:hover': { borderColor: '#B3BAC5', bgcolor: '#EBECF0' } }}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={handleConfirmGenerate}
+                        variant="contained"
+                        disabled={optUploading}
+                        startIcon={optUploading ? <CircularProgress size={16} color="inherit" /> : <PlayArrowIcon />}
+                        sx={{ textTransform: 'none', fontWeight: 600, bgcolor: '#1877F2', borderRadius: '8px', '&:hover': { bgcolor: '#0A52C4' } }}
+                    >
+                        {optUploading ? 'Uploading…' : 'Generate'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             <Dialog
                 open={confirmDialogOpen}
@@ -405,8 +567,8 @@ const IssueDetailView: React.FC<IssueDetailViewProps> = observer(({ mode = 'test
                         sx={{
                             textTransform: 'none',
                             fontWeight: 600,
-                            bgcolor: '#3614b2',
-                            '&:hover': { bgcolor: '#4a12a4' },
+                            bgcolor: '#0D65D9',
+                            '&:hover': { bgcolor: '#0A52C4' },
                         }}
                     >
                         {isPublishing ? LOADING.PUBLISHING : BUTTONS.CONFIRM_PUBLISH}

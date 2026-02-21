@@ -1,351 +1,223 @@
-import React, { useState, useRef, useEffect } from 'react';
-import {
-    Typography, Button, Box, Stack, Backdrop, CircularProgress,
-    Paper, TextField, InputAdornment, ClickAwayListener, Divider
-} from '@mui/material';
+﻿import React, { useState } from 'react';
+import { Typography, Button, Box, Stack, TextField, InputAdornment, IconButton } from '@mui/material';
 import { observer } from 'mobx-react-lite';
-import { useNavigate } from 'react-router-dom';
-import SearchIcon from '@mui/icons-material/Search';
-import LockIcon from '@mui/icons-material/Lock';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import { jiraApi } from '../../lib/api/jira';
-import { issueStore } from '../../app/store/issueStore';
-import { BRANDING, LOADING, BUTTONS, PLACEHOLDERS } from '../../lib/constants/messages';
+import { useNavigate, Link } from 'react-router-dom';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
+import { sessionStore } from '../../app/store/sessionStore';
+import { BRANDING } from '../../lib/constants/messages';
 
-interface Provider {
-    id: string;
-    name: string;
-    description: string;
-    icon: string;
-}
-
-const providers: Provider[] = [
-    { id: 'jira', name: 'Jira', description: 'Project Management', icon: '📋' },
-    { id: 'azure-devops', name: 'Azure DevOps', description: 'DevOps & CI/CD', icon: '🔷' },
-    { id: 'servicenow', name: 'ServiceNow', description: 'IT Service Management', icon: '🟢' },
+const FEATURES = [
+    { title: 'AI-Powered Test Plans', desc: 'Generate comprehensive test plans from user stories instantly.' },
+    { title: 'Jira Integration', desc: 'Seamlessly import issues directly from your Jira board.' },
+    { title: 'Smart Collaboration', desc: 'Publish and share test artifacts across your team.' },
 ];
 
 const LoginView: React.FC = observer(() => {
-    const [isAuthenticating, setIsAuthenticating] = useState(false);
-    const [selectedProvider, setSelectedProvider] = useState<Provider>(providers[0]);
-    const [dropdownOpen, setDropdownOpen] = useState(false);
-    const [searchQuery, setSearchQuery] = useState('');
-    const searchRef = useRef<HTMLInputElement>(null);
     const navigate = useNavigate();
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [errors, setErrors] = useState<{ username?: string; password?: string }>({});
 
-    useEffect(() => {
-        if (issueStore.isAuthenticated) {
-            navigate('/dashboard', { replace: true });
-        }
-    }, [issueStore.isAuthenticated, navigate]);
-
-    useEffect(() => {
-        if (dropdownOpen && searchRef.current) {
-            searchRef.current.focus();
-        }
-    }, [dropdownOpen]);
-
-    const filteredProviders = providers.filter(p =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.description.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    const handleLogin = () => {
-        const authUrl = 'https://9xd63zeaqb.execute-api.us-east-1.amazonaws.com/dev/auth/jira';
-        const popup = jiraApi.authJira(authUrl);
-        setIsAuthenticating(true);
-
-        if (popup) {
-            const timer = setInterval(async () => {
-                if (popup.closed) {
-                    clearInterval(timer);
-                    setIsAuthenticating(false);
-                    const success = await issueStore.fetchIssues();
-                    if (success) {
-                        navigate('/dashboard', { replace: true });
-                    }
-                    return;
-                }
-
-                const success = await issueStore.fetchIssues(true);
-                if (success) {
-                    clearInterval(timer);
-                    setIsAuthenticating(false);
-                    try { popup.close(); } catch (_) { /* cross-origin */ }
-                    navigate('/dashboard', { replace: true });
-                }
-            }, 2000);
-        }
+    const validate = () => {
+        const e: { username?: string; password?: string } = {};
+        if (!username.trim()) e.username = 'Username is required';
+        if (!password.trim()) e.password = 'Password is required';
+        setErrors(e);
+        return Object.keys(e).length === 0;
     };
 
-    const handleSelectProvider = (provider: Provider) => {
-        setSelectedProvider(provider);
-        setDropdownOpen(false);
-        setSearchQuery('');
+    const handleLogin = () => {
+        if (!validate()) return;
+        sessionStore.setAuthenticated(true);
+        navigate('/home', { replace: true });
     };
 
     return (
-        <Box
-            sx={{
-                height: '100vh',
+        <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+
+            {/* ── Left brand panel ── */}
+            <Box sx={{
+                display: { xs: 'none', md: 'flex' },
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                width: '45%',
+                flexShrink: 0,
+                background: 'linear-gradient(160deg, #0A3D8F 0%, #1877F2 55%, #3D90F5 100%)',
+                p: 5,
+                position: 'relative',
+                overflow: 'hidden',
+            }}>
+                {/* Decorative circles */}
+                <Box sx={{ position: 'absolute', width: 360, height: 360, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.08)', top: -100, right: -100 }} />
+                <Box sx={{ position: 'absolute', width: 260, height: 260, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.06)', top: -40, right: -40 }} />
+                <Box sx={{ position: 'absolute', width: 300, height: 300, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.06)', bottom: -80, left: -80 }} />
+
+                {/* Logo */}
+                <Box>
+                    <Box component="img" src="/BSC_Logo.png" alt="BSC Logo"
+                        sx={{ height: 28, objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.9 }} />
+                </Box>
+
+                {/* Center content */}
+                <Box>
+                    <Box sx={{
+                        width: 52, height: 52, borderRadius: '14px',
+                        bgcolor: 'rgba(255,255,255,0.15)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 3,
+                    }}>
+                        <RocketLaunchIcon sx={{ color: '#fff', fontSize: 26 }} />
+                    </Box>
+                    <Typography sx={{ fontSize: '2rem', fontWeight: 800, color: '#fff', lineHeight: 1.2, letterSpacing: '-0.03em', mb: 1.5 }}>
+                        {BRANDING.APP_NAME}
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.65)', lineHeight: 1.7, mb: 4, maxWidth: 320 }}>
+                        Accelerate your QA workflow with AI-driven test plan generation from your project management tools.
+                    </Typography>
+
+                    <Stack spacing={2.5}>
+                        {FEATURES.map((f) => (
+                            <Box key={f.title} sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
+                                <Box sx={{
+                                    mt: 0.3, width: 20, height: 20, borderRadius: '50%',
+                                    bgcolor: 'rgba(255,255,255,0.2)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                                }}>
+                                    <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: '#fff' }} />
+                                </Box>
+                                <Box>
+                                    <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: '#fff' }}>{f.title}</Typography>
+                                    <Typography sx={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>{f.desc}</Typography>
+                                </Box>
+                            </Box>
+                        ))}
+                    </Stack>
+                </Box>
+
+                {/* Bottom copyright */}
+                <Typography sx={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.35)' }}>
+                    {BRANDING.COPYRIGHT}
+                </Typography>
+            </Box>
+
+            {/* ── Right form panel ── */}
+            <Box sx={{
+                flex: 1,
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: 'linear-gradient(135deg, #3614b2 0%, #5a1196 50%, #6d0c69 100%)',
-            }}
-        >
-            <Backdrop
-                sx={{
-                    color: '#fff',
-                    zIndex: (theme) => theme.zIndex.drawer + 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 2,
-                    bgcolor: 'rgba(9, 30, 66, 0.54)',
-                    backdropFilter: 'blur(8px)',
-                }}
-                open={isAuthenticating}
-            >
-                <CircularProgress color="inherit" />
-                <Typography variant="h6" sx={{ fontWeight: 500 }}>
-                    {LOADING.WAITING_AUTH}
-                </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.8 }}>
-                    {LOADING.COMPLETE_LOGIN}
-                </Typography>
-            </Backdrop>
+                bgcolor: '#FAFBFC',
+                px: { xs: 3, sm: 6, md: 8 },
+                py: 4,
+                overflowY: 'auto',
+            }}>
+                <Box sx={{ width: '100%', maxWidth: 380 }}>
 
-            <Paper
-                elevation={8}
-                sx={{
-                    maxWidth: 480,
-                    width: '100%',
-                    borderRadius: '16px',
-                    p: { xs: 3, sm: 5 },
-                    mx: 2,
-                }}
-            >
-                <Stack spacing={3} alignItems="center" textAlign="center">
-
-                    <Box>
-                        <Typography
-                            variant="h4"
-                            sx={{
-                                fontFamily: '"Fraunces", serif',
-                                fontWeight: 600,
-                                background: 'linear-gradient(135deg, #3614b2 0%, #5a1196 50%, #6d0c69 100%)',
-                                WebkitBackgroundClip: 'text',
-                                WebkitTextFillColor: 'transparent',
-                                mb: 0.5,
-                            }}
-                        >
+                    {/* Mobile logo */}
+                    <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', gap: 1.5, mb: 4 }}>
+                        <Box component="img" src="/BSC_Logo.png" alt="BSC Logo" sx={{ height: 24, objectFit: 'contain' }} />
+                        <Typography sx={{ fontWeight: 800, fontSize: '1rem', background: 'linear-gradient(135deg, #0D65D9, #3D90F5)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                             {BRANDING.APP_NAME}
                         </Typography>
                     </Box>
 
-                    <Box>
-                        <Typography variant="h5" sx={{ fontWeight: 700, color: '#172B4D', mb: 0.5 }}>
-                            {BRANDING.WELCOME}
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: '#6B778C' }}>
-                            {BRANDING.AUTH_SUBTITLE}
-                            <Box component="span" sx={{ color: '#5a1196', ml: 0.5 }}>.</Box>
-                        </Typography>
-                    </Box>
+                    <Typography sx={{ fontWeight: 800, fontSize: '1.6rem', color: '#172B4D', letterSpacing: '-0.03em', mb: 0.5 }}>
+                        Welcome back
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.88rem', color: '#6B778C', mb: 4 }}>
+                        Sign in to continue to {BRANDING.APP_NAME}
+                    </Typography>
 
-                    <Box sx={{ width: '100%', textAlign: 'left' }}>
-                        <Typography variant="body2" sx={{ fontWeight: 600, color: '#42526E', mb: 1 }}>
-                            {BRANDING.AUTH_PROVIDER_LABEL}
-                        </Typography>
-
-                        <ClickAwayListener onClickAway={() => { setDropdownOpen(false); setSearchQuery(''); }}>
-                            <Box sx={{ position: 'relative' }}>
-                                <Box
-                                    onClick={() => setDropdownOpen(!dropdownOpen)}
-                                    sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        border: dropdownOpen ? '2px solid #4a12a4' : '1.5px solid #DFE1E6',
-                                        borderRadius: '10px',
-                                        p: 1.5,
-                                        cursor: 'pointer',
-                                        transition: 'border-color 0.2s',
-                                        '&:hover': {
-                                            borderColor: dropdownOpen ? '#4a12a4' : '#B3BAC5',
-                                        },
-                                    }}
-                                >
-                                    {selectedProvider ? (
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                            <Box
-                                                sx={{
-                                                    width: 36, height: 36, borderRadius: '8px',
-                                                    bgcolor: '#E8F0FE', display: 'flex',
-                                                    alignItems: 'center', justifyContent: 'center',
-                                                    fontSize: '1.2rem',
-                                                }}
-                                            >
-                                                {selectedProvider.icon}
-                                            </Box>
-                                            <Box>
-                                                <Typography variant="body2" sx={{ fontWeight: 600, color: '#172B4D', lineHeight: 1.3 }}>
-                                                    {selectedProvider.name}
-                                                </Typography>
-                                                <Typography variant="caption" sx={{ color: '#6B778C' }}>
-                                                    {selectedProvider.description}
-                                                </Typography>
-                                            </Box>
-                                        </Box>
-                                    ) : (
-                                        <Typography variant="body2" sx={{ color: '#A5ADBA' }}>
-                                            {PLACEHOLDERS.CHOOSE_PROVIDER}
-                                        </Typography>
-                                    )}
-                                    {dropdownOpen
-                                        ? <KeyboardArrowUpIcon sx={{ color: '#6B778C' }} />
-                                        : <KeyboardArrowDownIcon sx={{ color: '#6B778C' }} />
-                                    }
-                                </Box>
-
-                                {dropdownOpen && (
-                                    <Paper
-                                        elevation={4}
-                                        sx={{
-                                            position: 'absolute',
-                                            top: '100%',
-                                            left: 0,
-                                            right: 0,
-                                            mt: 0.5,
-                                            borderRadius: '10px',
-                                            border: '1px solid #DFE1E6',
-                                            zIndex: 10,
-                                            overflow: 'hidden',
-                                        }}
-                                    >
-                                        <Box sx={{ p: 1.5 }}>
-                                            <TextField
-                                                inputRef={searchRef}
-                                                size="small"
-                                                fullWidth
-                                                placeholder={PLACEHOLDERS.SEARCH_PROVIDERS}
-                                                value={searchQuery}
-                                                onChange={(e) => setSearchQuery(e.target.value)}
-                                                slotProps={{
-                                                    input: {
-                                                        startAdornment: (
-                                                            <InputAdornment position="start">
-                                                                <SearchIcon sx={{ color: '#A5ADBA', fontSize: 20 }} />
-                                                            </InputAdornment>
-                                                        ),
-                                                    },
-                                                }}
-                                                sx={{
-                                                    '& .MuiOutlinedInput-root': {
-                                                        borderRadius: '8px',
-                                                        fontSize: '0.875rem',
-                                                    },
-                                                }}
-                                            />
-                                        </Box>
-
-                                        {filteredProviders.map((provider) => (
-                                            <Box
-                                                key={provider.id}
-                                                onClick={() => handleSelectProvider(provider)}
-                                                sx={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'space-between',
-                                                    px: 1.5,
-                                                    py: 1.2,
-                                                    cursor: 'pointer',
-                                                    transition: 'background-color 0.15s',
-                                                    bgcolor: selectedProvider?.id === provider.id ? '#F4F5F7' : 'transparent',
-                                                    '&:hover': { bgcolor: '#F4F5F7' },
-                                                }}
-                                            >
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                                    <Box
-                                                        sx={{
-                                                            width: 36, height: 36, borderRadius: '8px',
-                                                            bgcolor: '#E8F0FE', display: 'flex',
-                                                            alignItems: 'center', justifyContent: 'center',
-                                                            fontSize: '1.2rem',
-                                                        }}
-                                                    >
-                                                        {provider.icon}
-                                                    </Box>
-                                                    <Box>
-                                                        <Typography variant="body2" sx={{ fontWeight: 600, color: '#172B4D', lineHeight: 1.3 }}>
-                                                            {provider.name}
-                                                        </Typography>
-                                                        <Typography variant="caption" sx={{ color: '#6B778C' }}>
-                                                            {provider.description}
-                                                        </Typography>
-                                                    </Box>
-                                                </Box>
-                                            </Box>
-                                        ))}
-
-                                        {filteredProviders.length === 0 && (
-                                            <Box sx={{ px: 1.5, py: 2, textAlign: 'center' }}>
-                                                <Typography variant="body2" sx={{ color: '#6B778C' }}>
-                                                    {PLACEHOLDERS.NO_PROVIDERS}
-                                                </Typography>
-                                            </Box>
-                                        )}
-                                    </Paper>
-                                )}
-                            </Box>
-                        </ClickAwayListener>
-                    </Box>
+                    <Stack spacing={2}>
+                        <TextField
+                            fullWidth size="small" label="Username"
+                            value={username}
+                            onChange={(e) => { setUsername(e.target.value); setErrors(p => ({ ...p, username: undefined })); }}
+                            onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                            error={!!errors.username} helperText={errors.username}
+                            slotProps={{
+                                input: {
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <PersonOutlineIcon sx={{ color: '#A5ADBA', fontSize: 19 }} />
+                                        </InputAdornment>
+                                    ),
+                                },
+                            }}
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: '10px', bgcolor: '#fff',
+                                    '&:hover fieldset': { borderColor: '#1877F2' },
+                                    '&.Mui-focused fieldset': { borderColor: '#1877F2' },
+                                },
+                                '& label.Mui-focused': { color: '#1877F2' },
+                            }}
+                        />
+                        <TextField
+                            fullWidth size="small" label="Password"
+                            type={showPassword ? 'text' : 'password'}
+                            value={password}
+                            onChange={(e) => { setPassword(e.target.value); setErrors(p => ({ ...p, password: undefined })); }}
+                            onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                            error={!!errors.password} helperText={errors.password}
+                            slotProps={{
+                                input: {
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <LockOutlinedIcon sx={{ color: '#A5ADBA', fontSize: 19 }} />
+                                        </InputAdornment>
+                                    ),
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <IconButton size="small" onClick={() => setShowPassword(v => !v)} edge="end">
+                                                {showPassword ? <VisibilityOff sx={{ fontSize: 18 }} /> : <Visibility sx={{ fontSize: 18 }} />}
+                                            </IconButton>
+                                        </InputAdornment>
+                                    ),
+                                },
+                            }}
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: '10px', bgcolor: '#fff',
+                                    '&:hover fieldset': { borderColor: '#1877F2' },
+                                    '&.Mui-focused fieldset': { borderColor: '#1877F2' },
+                                },
+                                '& label.Mui-focused': { color: '#1877F2' },
+                            }}
+                        />
+                    </Stack>
 
                     <Button
-                        fullWidth
-                        variant="contained"
-                        size="large"
+                        fullWidth variant="contained" size="large"
                         onClick={handleLogin}
-                        disabled={isAuthenticating || !selectedProvider}
-                        startIcon={<LockIcon sx={{ fontSize: 18 }} />}
                         sx={{
-                            py: 1.5,
-                            borderRadius: '10px',
-                            background: 'linear-gradient(135deg, #3614b2 0%, #5a1196 50%, #6d0c69 100%)',
-                            fontWeight: 600,
-                            fontSize: '0.95rem',
-                            textTransform: 'none',
-                            boxShadow: '0 4px 14px rgba(54, 20, 178, 0.4)',
+                            mt: 3, py: 1.4, borderRadius: '10px',
+                            background: 'linear-gradient(135deg, #0D65D9 0%, #1877F2 55%, #3D90F5 100%)',
+                            fontWeight: 700, fontSize: '0.92rem', textTransform: 'none',
+                            boxShadow: '0 4px 16px rgba(24,119,242,0.35)',
                             '&:hover': {
-                                background: 'linear-gradient(135deg, #4a12a4 0%, #660f89 50%, #6d0e7b 100%)',
-                                boxShadow: '0 6px 20px rgba(54, 20, 178, 0.5)',
-                            },
-                            '&.Mui-disabled': {
-                                background: '#DFE1E6',
+                                background: 'linear-gradient(135deg, #0A52C4 0%, #1468D8 55%, #2F84F0 100%)',
+                                boxShadow: '0 6px 22px rgba(24,119,242,0.45)',
                             },
                         }}
                     >
-                        {BUTTONS.LAUNCH(selectedProvider?.name || 'Provider')}
+                        Sign In
                     </Button>
 
-                    <Typography variant="caption" sx={{ color: '#6B778C', lineHeight: 1.6 }}>
-                        By signing in, you agree to our{' '}
-                        <Box component="span" sx={{ color: '#4a12a4', cursor: 'pointer', textDecoration: 'underline' }}>
-                            {BRANDING.TERMS}
-                        </Box>
-                        {' '}and{' '}
-                        <Box component="span" sx={{ color: '#4a12a4', cursor: 'pointer', textDecoration: 'underline' }}>
-                            {BRANDING.PRIVACY}
+                    <Typography sx={{ mt: 3, fontSize: '0.85rem', color: '#6B778C', textAlign: 'center' }}>
+                        Don't have an account?{' '}
+                        <Box component={Link} to="/signup"
+                            sx={{ color: '#1877F2', fontWeight: 700, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
+                            Sign Up
                         </Box>
                     </Typography>
-
-                    <Divider sx={{ width: '100%' }} />
-                    <Typography variant="caption" sx={{ color: '#A5ADBA' }}>
-                        {BRANDING.COPYRIGHT}
-                    </Typography>
-                </Stack>
-            </Paper>
+                </Box>
+            </Box>
         </Box>
     );
 });

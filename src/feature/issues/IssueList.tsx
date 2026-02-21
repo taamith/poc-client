@@ -1,6 +1,6 @@
-import React from 'react';
+﻿import React from 'react';
 import { observer } from 'mobx-react-lite';
-import { Card, CardContent, Typography, List, ListItem, ListItemText, ListItemButton, CircularProgress, Box, Divider, Checkbox, Chip } from '@mui/material';
+import { Card, CardContent, Typography, List, ListItem, ListItemText, ListItemButton, CircularProgress, Box, Divider, Checkbox, Chip, Button } from '@mui/material';
 import { issueStore } from '../../app/store/issueStore';
 import { HEADERS, PLACEHOLDERS } from '../../lib/constants/messages';
 
@@ -32,7 +32,20 @@ const IssueList: React.FC = observer(() => {
                         </Typography>
                     </Box>
                     {issueStore.issues.length > 0 && (
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            {issueStore.selectedIssueKeys.size > 0 && (
+                                <Button
+                                    size="small"
+                                    onClick={() => issueStore.clearSelection()}
+                                    sx={{
+                                        fontSize: '11px', fontWeight: 600, textTransform: 'none',
+                                        color: '#1877F2', py: 0, px: 0.5, minWidth: 0,
+                                        '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' },
+                                    }}
+                                >
+                                    Clear All
+                                </Button>
+                            )}
                             <Checkbox
                                 size="small"
                                 indeterminate={
@@ -50,7 +63,7 @@ const IssueList: React.FC = observer(() => {
                                         issueStore.selectAllIssues();
                                     }
                                 }}
-                                sx={{ p: 0.5, color: '#6B778C', '&.Mui-checked': { color: '#5a1196' } }}
+                                sx={{ p: 0.5, color: '#6B778C', '&.Mui-checked': { color: '#1877F2' } }}
                                 id="select-all-stories"
                             />
                             <Typography variant="caption" sx={{ color: '#6B778C', fontWeight: 600, fontSize: '11px' }}>
@@ -77,7 +90,7 @@ const IssueList: React.FC = observer(() => {
                                     size="small"
                                     checked={issueStore.selectedIssueKeys.has(issue.key)}
                                     onChange={() => issueStore.toggleIssueSelection(issue.key)}
-                                    sx={{ ml: 1.5, color: '#B3BAC5', '&.Mui-checked': { color: '#5a1196' } }}
+                                    sx={{ ml: 1.5, color: '#B3BAC5', '&.Mui-checked': { color: '#1877F2' } }}
                                     id={`checkbox-${issue.key}`}
                                 />
                                 <ListItemButton
@@ -90,7 +103,7 @@ const IssueList: React.FC = observer(() => {
                                         borderRadius: 0,
                                         '&.Mui-selected': {
                                             bgcolor: '#E8F0FE',
-                                            borderLeft: '3px solid #5a1196',
+                                            borderLeft: '3px solid #1877F2',
                                             '&:hover': { bgcolor: '#E8F0FE' },
                                         },
                                         '&:hover': { bgcolor: '#F4F5F7' },
@@ -123,9 +136,9 @@ const IssueList: React.FC = observer(() => {
                                                     height: 20,
                                                     fontSize: '10px',
                                                     fontWeight: 700,
-                                                    bgcolor: 'rgba(90, 17, 150, 0.08)',
-                                                    color: '#5a1196',
-                                                    border: '1px solid rgba(90, 17, 150, 0.25)',
+                                                    bgcolor: 'rgba(24,119,242,0.08)',
+                                                    color: '#1877F2',
+                                                    border: '1px solid rgba(24,119,242,0.25)',
                                                     '& .MuiChip-label': { px: 1 },
                                                 }}
                                             />

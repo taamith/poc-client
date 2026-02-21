@@ -2,6 +2,7 @@ import { makeAutoObservable, runInAction } from 'mobx';
 import { jiraApi } from '../../lib/api/jira';
 import { toast } from 'sonner';
 import { ERRORS, SUCCESS, LOADING, DEFAULTS } from '../../lib/constants/messages';
+import { getApiErrorMessage, getApiStatusCode } from '../../lib/api/errors';
 
 export interface JiraIssue {
     key: string;
@@ -24,8 +25,6 @@ class IssueStore {
     generatedPlans: Map<string, string> = new Map();
     loading: boolean = false;
     error: string | null = null;
-    isAuthenticated: boolean = false;
-    authChecked: boolean = false;
     isGeneratingPlan: boolean = false;
     generationMessage: string | null = null;
 
@@ -69,8 +68,6 @@ class IssueStore {
                 }
 
                 if (!silent) this.loading = false;
-                this.isAuthenticated = true;
-                this.authChecked = true;
 
                 if (this.issues.length > 0) {
                     this.error = null;
@@ -84,11 +81,9 @@ class IssueStore {
             }
             runInAction(() => {
                 this.issues = [];
-                this.authChecked = true;
                 if (!silent) {
                     this.loading = false;
-                    this.isAuthenticated = false;
-                    if (err.response?.status === 401) {
+                    if (getApiStatusCode(err) === 401) {
                         this.error = ERRORS.LOGIN_REQUIRED;
                         toast.error(ERRORS.LOGIN_REQUIRED);
                     } else {
@@ -185,7 +180,7 @@ class IssueStore {
             });
         } catch (err: any) {
             runInAction(() => {
-                const apiError = err.response?.data?.error || err.message || ERRORS.FETCH_ISSUE_DETAILS;
+                const apiError = getApiErrorMessage(err, ERRORS.FETCH_ISSUE_DETAILS);
                 this.error = apiError;
                 this.loading = false;
                 toast.error(apiError);
@@ -234,10 +229,6 @@ class IssueStore {
         });
 
         await Promise.all(prefetchPromises);
-    }
-
-    setAuthenticated(value: boolean) {
-        this.isAuthenticated = value;
     }
 
     async generateTestPlan(baseUrl: string) {
@@ -296,7 +287,7 @@ class IssueStore {
             console.error('Generate test plan error:', err);
             runInAction(() => {
                 this.isGeneratingPlan = false;
-                const apiError = err.response?.data?.message || err.response?.data?.error || err.message || ERRORS.GENERATE_TEST_PLAN;
+                const apiError = getApiErrorMessage(err, ERRORS.GENERATE_TEST_PLAN);
                 this.error = apiError;
                 toast.error(apiError);
             });

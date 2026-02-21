@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+﻿import React, { useCallback, useRef, useState } from 'react';
 import {
     Box,
     Typography,
@@ -12,6 +12,7 @@ import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { uploadFiles } from '../../lib/api/uploadApi';
+import { getApiErrorMessage } from '../../lib/api/errors';
 import { toast } from 'sonner';
 import { ERRORS, SUCCESS, LOADING, PLACEHOLDERS } from '../../lib/constants/messages';
 
@@ -60,13 +61,13 @@ const UploadDocumentsPage: React.FC = () => {
         setFileProgress({});
         try {
             await uploadFiles(files, (fileIdx, pct) => {
-                setFileProgress((prev) => ({ ...prev, [fileIdx]: pct }));
+                setFileProgress((prev) => ({ ...prev, [fileIdx]: pct })); 
             });
             toast.success(SUCCESS.FILES_UPLOADED(files.length));
             setUploading(false);
             setUploadDone(true);
         } catch (err: any) {
-            toast.error(err.response?.data?.message || err.message || ERRORS.UPLOAD_FILES);
+            toast.error(getApiErrorMessage(err, ERRORS.UPLOAD_FILES));
             setUploading(false);
         }
     };
@@ -77,7 +78,7 @@ const UploadDocumentsPage: React.FC = () => {
             : 0;
 
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, maxWidth: 720, mx: 'auto', width: '100%' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, maxWidth: 720, mx: 'auto', width: '100%', justifyContent: 'center' }}>
 
             {/* ── Drop zone (always visible, fixed top) ── */}
             <Box
@@ -88,17 +89,17 @@ const UploadDocumentsPage: React.FC = () => {
                 sx={{
                     flexShrink: 0,
                     border: '2px dashed',
-                    borderColor: dragOver ? '#5a1196' : '#DFE1E6',
+                    borderColor: dragOver ? '#1877F2' : '#DFE1E6',
                     borderRadius: '12px',
-                    bgcolor: dragOver ? 'rgba(90,17,150,0.04)' : '#FAFBFC',
+                    bgcolor: dragOver ? 'rgba(24,119,242,0.04)' : '#FAFBFC',
                     py: 5,
                     textAlign: 'center',
                     cursor: uploading ? 'default' : 'pointer',
                     transition: 'all 0.2s',
-                    '&:hover': uploading ? {} : { borderColor: '#5a1196', bgcolor: 'rgba(90,17,150,0.04)' },
+                    '&:hover': uploading ? {} : { borderColor: '#1877F2', bgcolor: 'rgba(24,119,242,0.04)' },
                 }}
             >
-                <CloudUploadIcon sx={{ fontSize: 48, color: '#5a1196', mb: 1 }} />
+                <CloudUploadIcon sx={{ fontSize: 48, color: '#1877F2', mb: 1 }} />
                 <Typography variant="h6" sx={{ fontWeight: 700, color: '#172B4D', mb: 0.5 }}>
                     {PLACEHOLDERS.DRAG_DROP}
                 </Typography>
@@ -127,7 +128,7 @@ const UploadDocumentsPage: React.FC = () => {
                             key={file.name}
                             sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1.25, px: 2, mb: 1, bgcolor: '#FFFFFF', border: '1px solid #EBECF0', borderRadius: '8px' }}
                         >
-                            <InsertDriveFileIcon sx={{ color: '#5a1196', fontSize: 20, flexShrink: 0 }} />
+                            <InsertDriveFileIcon sx={{ color: '#1877F2', fontSize: 20, flexShrink: 0 }} />
                             <Box sx={{ flex: 1, minWidth: 0 }}>
                                 <Typography variant="body2" sx={{ fontWeight: 600, color: '#172B4D', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                     {file.name}
@@ -139,7 +140,7 @@ const UploadDocumentsPage: React.FC = () => {
                                     <LinearProgress
                                         variant="determinate"
                                         value={fileProgress[idx]}
-                                        sx={{ mt: 0.5, height: 4, borderRadius: 2, '& .MuiLinearProgress-bar': { bgcolor: '#5a1196' } }}
+                                        sx={{ mt: 0.5, height: 4, borderRadius: 2, '& .MuiLinearProgress-bar': { bgcolor: '#1877F2' } }}
                                     />
                                 )}
                             </Box>
@@ -156,13 +157,13 @@ const UploadDocumentsPage: React.FC = () => {
 
                     {uploading && (
                         <Box sx={{ mt: 1.5 }}>
-                            <Typography variant="body2" sx={{ color: '#5a1196', fontWeight: 600, mb: 1 }}>
+                            <Typography variant="body2" sx={{ color: '#1877F2', fontWeight: 600, mb: 1 }}>
                                 {LOADING.UPLOADING(totalProgress)}
                             </Typography>
                             <LinearProgress
                                 variant="determinate"
                                 value={totalProgress}
-                                sx={{ height: 6, borderRadius: 3, '& .MuiLinearProgress-bar': { bgcolor: '#5a1196' } }}
+                                sx={{ height: 6, borderRadius: 3, '& .MuiLinearProgress-bar': { bgcolor: '#1877F2' } }}
                             />
                         </Box>
                     )}
@@ -173,7 +174,7 @@ const UploadDocumentsPage: React.FC = () => {
             <Box
                 sx={{
                     flexShrink: 0,
-                    mt: 'auto',
+                    mt: 2,
                     pt: 2,
                     pb: 1,
                     display: 'flex',
@@ -195,7 +196,7 @@ const UploadDocumentsPage: React.FC = () => {
                     onClick={handleUpload}
                     disabled={uploading || files.length === 0}
                     startIcon={uploading ? <CircularProgress size={16} color="inherit" /> : <CloudUploadIcon />}
-                    sx={{ textTransform: 'none', fontWeight: 600, bgcolor: '#5a1196', borderRadius: '8px', '&:hover': { bgcolor: '#4a12a4' } }}
+                    sx={{ textTransform: 'none', fontWeight: 600, bgcolor: '#1877F2', borderRadius: '8px', '&:hover': { bgcolor: '#0A52C4' } }}
                 >
                     {uploading ? LOADING.UPLOADING_SHORT : 'Upload'}
                 </Button>

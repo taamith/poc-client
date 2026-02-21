@@ -1,10 +1,10 @@
-import { Breadcrumbs, Typography, Link, Box } from '@mui/material';
+﻿import { Breadcrumbs, Typography, Link, Box } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import HomeIcon from '@mui/icons-material/Home';
 
 const routeLabels: Record<string, string> = {
-    '/dashboard': 'Dashboard',
+    '/home': 'Home',
     '/test-plans': 'Test Plans',
     '/reports': 'Reports',
     '/settings': 'Settings',
@@ -32,7 +32,7 @@ const AppBreadcrumbs = () => {
             >
                 <Link
                     underline="hover"
-                    onClick={() => navigate('/dashboard')}
+                    onClick={() => navigate('/home')}
                     sx={{
                         display: 'flex',
                         alignItems: 'center',
@@ -41,7 +41,7 @@ const AppBreadcrumbs = () => {
                         color: '#6B778C',
                         fontSize: 13,
                         fontWeight: 500,
-                        '&:hover': { color: '#5a1196' },
+                        '&:hover': { color: '#1877F2' },
                     }}
                 >
                     <HomeIcon sx={{ fontSize: 15 }} />

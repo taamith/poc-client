@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import {
     Dialog,
     DialogTitle,
@@ -11,6 +11,7 @@ import {
     TextField,
 } from '@mui/material';
 import { testPlanApi } from '../../lib/api/testPlanApi';
+import { getApiErrorMessage } from '../../lib/api/errors';
 import { toast } from 'sonner';
 import {
     extractTestPlanJson,
@@ -78,7 +79,7 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
             }
         } catch (err: any) {
             console.error('Error fetching test plan:', err);
-            const errorMsg = err.response?.data?.message || err.message || ERRORS.LOAD_TEST_PLAN;
+            const errorMsg = getApiErrorMessage(err, ERRORS.LOAD_TEST_PLAN);
             toast.error(errorMsg);
         } finally {
             setLoading(false);
@@ -105,7 +106,7 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
             onClose();
         } catch (err: any) {
             console.error('Error saving test plan:', err);
-            const errorMsg = err.response?.data?.message || err.message || ERRORS.SAVE_TEST_PLAN;
+            const errorMsg = getApiErrorMessage(err, ERRORS.SAVE_TEST_PLAN);
             toast.error(errorMsg);
         } finally {
             setSaving(false);
@@ -143,7 +144,7 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
                             sx={{
                                 px: 2,
                                 py: 0.5,
-                                bgcolor: '#5a1196',
+                                bgcolor: '#1877F2',
                                 color: 'white',
                                 borderRadius: '3px',
                                 fontSize: '12px',
@@ -221,9 +222,9 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
                         sx={{
                             textTransform: 'none',
                             fontWeight: 600,
-                            bgcolor: '#3614b2',
+                            bgcolor: '#0D65D9',
                             '&:hover': {
-                                bgcolor: '#4a12a4',
+                                bgcolor: '#0A52C4',
                             },
                         }}
                     >

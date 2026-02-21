@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Box, Typography } from '@mui/material';
 import type { SvgIconProps } from '@mui/material/SvgIcon';
 
@@ -31,7 +31,7 @@ const PlaceholderPage: React.FC<PlaceholderPageProps> = ({ title, subtitle, Icon
                     justifyContent: 'center',
                 }}
             >
-                <Icon sx={{ fontSize: 32, color: '#5a1196' }} />
+                <Icon sx={{ fontSize: 32, color: '#1877F2' }} />
             </Box>
             <Typography variant="h5" sx={{ fontWeight: 700, color: '#172B4D' }}>
                 {title}

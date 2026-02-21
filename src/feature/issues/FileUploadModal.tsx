@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+﻿import React, { useCallback, useRef, useState } from 'react';
 import {
     Dialog,
     DialogTitle,
@@ -15,6 +15,7 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { uploadFiles } from '../../lib/api/uploadApi';
+import { getApiErrorMessage } from '../../lib/api/errors';
 import { toast } from 'sonner';
 import {
     ERRORS, SUCCESS, LOADING, BUTTONS, HEADERS, PLACEHOLDERS,
@@ -99,7 +100,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ open, onClose, onProc
             onProceed();
         } catch (err: any) {
             console.error('Upload failed:', err);
-            toast.error(err.response?.data?.message || err.message || ERRORS.UPLOAD_FILES);
+            toast.error(getApiErrorMessage(err, ERRORS.UPLOAD_FILES));
             setUploading(false);
         }
     };
@@ -139,19 +140,19 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ open, onClose, onProc
                     onClick={() => !uploading && inputRef.current?.click()}
                     sx={{
                         border: '2px dashed',
-                        borderColor: dragOver ? '#5a1196' : '#DFE1E6',
+                        borderColor: dragOver ? '#1877F2' : '#DFE1E6',
                         borderRadius: '8px',
-                        bgcolor: dragOver ? 'rgba(90,17,150,0.04)' : '#FAFBFC',
+                        bgcolor: dragOver ? 'rgba(24,119,242,0.04)' : '#FAFBFC',
                         p: 4,
                         textAlign: 'center',
                         cursor: uploading ? 'default' : 'pointer',
                         transition: 'all 0.2s',
                         '&:hover': uploading
                             ? {}
-                            : { borderColor: '#5a1196', bgcolor: 'rgba(90,17,150,0.04)' },
+                            : { borderColor: '#1877F2', bgcolor: 'rgba(24,119,242,0.04)' },
                     }}
                 >
-                    <CloudUploadIcon sx={{ fontSize: 48, color: '#5a1196', mb: 1 }} />
+                    <CloudUploadIcon sx={{ fontSize: 48, color: '#1877F2', mb: 1 }} />
                     <Typography variant="body1" sx={{ fontWeight: 600, color: '#172B4D' }}>
                         {PLACEHOLDERS.DRAG_DROP}
                     </Typography>
@@ -190,7 +191,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ open, onClose, onProc
                                     borderRadius: '4px',
                                 }}
                             >
-                                <InsertDriveFileIcon sx={{ color: '#5a1196', fontSize: 20 }} />
+                                <InsertDriveFileIcon sx={{ color: '#1877F2', fontSize: 20 }} />
                                 <Box sx={{ flex: 1, minWidth: 0 }}>
                                     <Typography
                                         variant="body2"
@@ -205,7 +206,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ open, onClose, onProc
                                         <LinearProgress
                                             variant="determinate"
                                             value={fileProgress[idx]}
-                                            sx={{ mt: 0.5, height: 4, borderRadius: 2, '& .MuiLinearProgress-bar': { bgcolor: '#5a1196' } }}
+                                            sx={{ mt: 0.5, height: 4, borderRadius: 2, '& .MuiLinearProgress-bar': { bgcolor: '#1877F2' } }}
                                         />
                                     )}
                                 </Box>
@@ -221,13 +222,13 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ open, onClose, onProc
 
                 {uploading && (
                     <Box sx={{ mt: 2, textAlign: 'center' }}>
-                        <Typography variant="body2" sx={{ color: '#5a1196', fontWeight: 600, mb: 1 }}>
+                        <Typography variant="body2" sx={{ color: '#1877F2', fontWeight: 600, mb: 1 }}>
                             {LOADING.UPLOADING(totalProgress)}
                         </Typography>
                         <LinearProgress
                             variant="determinate"
                             value={totalProgress}
-                            sx={{ height: 6, borderRadius: 3, '& .MuiLinearProgress-bar': { bgcolor: '#5a1196' } }}
+                            sx={{ height: 6, borderRadius: 3, '& .MuiLinearProgress-bar': { bgcolor: '#1877F2' } }}
                         />
                     </Box>
                 )}
@@ -255,9 +256,9 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ open, onClose, onProc
                     sx={{
                         textTransform: 'none',
                         fontWeight: 600,
-                        borderColor: '#5a1196',
-                        color: '#5a1196',
-                        '&:hover': { borderColor: '#4a0e80', bgcolor: 'rgba(90,17,150,0.04)' },
+                        borderColor: '#1877F2',
+                        color: '#1877F2',
+                        '&:hover': { borderColor: '#4a0e80', bgcolor: 'rgba(24,119,242,0.04)' },
                     }}
                 >
                     {BUTTONS.SKIP_GENERATE}
@@ -270,8 +271,8 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ open, onClose, onProc
                     sx={{
                         textTransform: 'none',
                         fontWeight: 600,
-                        bgcolor: '#3614b2',
-                        '&:hover': { bgcolor: '#4a12a4' },
+                        bgcolor: '#0D65D9',
+                        '&:hover': { bgcolor: '#0A52C4' },
                     }}
                 >
                     {uploading ? LOADING.UPLOADING_SHORT : BUTTONS.UPLOAD_GENERATE}
