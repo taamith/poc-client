@@ -36,7 +36,12 @@ const fieldSx = {
 const Header = observer(() => {
     const navigate = useNavigate();
 
-    const [profile, setProfile] = useState<Profile>({ name: 'User', employeeId: '', email: '', phone: '' });
+    const profile: Profile = {
+        name: sessionStore.user?.name || 'User',
+        employeeId: sessionStore.user?.employeeId || '',
+        email: sessionStore.user?.email || '',
+        phone: sessionStore.user?.phone || '',
+    };
     const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
     const [editOpen, setEditOpen] = useState(false);
@@ -62,7 +67,7 @@ const Header = observer(() => {
         if (!editForm.name.trim()) e.name = 'Name is required';
         if (editForm.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editForm.email)) e.email = 'Enter a valid email';
         if (Object.keys(e).length > 0) { setEditErrors(e); return; }
-        setProfile(editForm);
+        sessionStore.updateUser({ name: editForm.name, email: editForm.email, phone: editForm.phone });
         setEditOpen(false);
     };
 

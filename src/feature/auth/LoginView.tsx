@@ -9,6 +9,7 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import { sessionStore } from '../../app/store/sessionStore';
 import { BRANDING } from '../../lib/constants/messages';
+import USERS from '../../lib/constants/users.json';
 
 const FEATURES = [
     { title: 'AI-Powered Test Plans', desc: 'Generate comprehensive test plans from user stories instantly.' },
@@ -23,17 +24,25 @@ const LoginView: React.FC = observer(() => {
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState<{ username?: string; password?: string }>({});
 
-    const validate = () => {
+    const handleLogin = () => {
         const e: { username?: string; password?: string } = {};
         if (!username.trim()) e.username = 'Username is required';
         if (!password.trim()) e.password = 'Password is required';
-        setErrors(e);
-        return Object.keys(e).length === 0;
-    };
+        if (Object.keys(e).length > 0) { setErrors(e); return; }
 
-    const handleLogin = () => {
-        if (!validate()) return;
-        sessionStore.setAuthenticated(true);
+        const match = USERS.find(u => u.username === username.trim() && u.password === password);
+        if (!match) {
+            setErrors({ password: 'Invalid username or password' });
+            return;
+        }
+
+        sessionStore.setAuthenticated(true, {
+            username: match.username,
+            name: match.name,
+            employeeId: match.employeeId,
+            email: match.email,
+            phone: match.phone,
+        });
         navigate('/home', { replace: true });
     };
 

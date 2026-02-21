@@ -1,0 +1,26 @@
+[
+  {
+    "username": "admin",
+    "password": "Admin@123",
+    "name": "Admin User",
+    "employeeId": "BSC001",
+    "email": "admin@bscsolutions.com",
+    "phone": "+91 9000000001"
+  },
+  {
+    "username": "amith",
+    "password": "Amith@123",
+    "name": "Amith Kumar",
+    "employeeId": "BSC002",
+    "email": "amith@bscsolutions.com",
+    "phone": "+91 9000000002"
+  },
+  {
+    "username": "tester",
+    "password": "Tester@123",
+    "name": "QA Tester",
+    "employeeId": "BSC003",
+    "email": "tester@bscsolutions.com",
+    "phone": ""
+  }
+]
