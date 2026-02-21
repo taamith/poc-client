@@ -249,7 +249,7 @@ class IssueStore {
 
             runInAction(() => {
                 this.isGeneratingPlan = false;
-                this.generationMessage = response.data?.message || SUCCESS.TEST_PLAN_GENERATED;
+                this.generationMessage = SUCCESS.TEST_PLAN_GENERATED;
                 toast.success(this.generationMessage);
 
                 if (this.selectedIssue && this.selectedIssue.key === issueKey) {
