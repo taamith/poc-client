@@ -13,8 +13,6 @@ import { createTheme, alpha } from '@mui/material/styles';
  */
 
 // ── Brand — Facebook Blue ─────────────────────────────────────────────────────
-const V900 = '#0A3D8F';   // deepest blue
-const V800 = '#0D52BF';   // dark blue
 const V700 = '#0D65D9';   // primary dark
 const V600 = '#1877F2';   // primary (Facebook blue)
 const V500 = '#3D90F5';   // primary light

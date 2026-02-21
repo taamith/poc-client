@@ -18,7 +18,6 @@ import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import { issueStore } from '../store/issueStore';
 import { sessionStore } from '../store/sessionStore';
 import { integrationStore } from '../store/integrationStore';
-import { BRANDING } from '../../lib/constants/messages';
 
 interface Profile { name: string; employeeId: string; email: string; phone: string; }
 interface PwdForm { current: string; next: string; confirm: string; }
