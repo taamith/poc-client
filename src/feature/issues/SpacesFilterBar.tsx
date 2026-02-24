@@ -6,7 +6,6 @@ import {
     Button,
     Checkbox,
     Chip,
-    CircularProgress,
     Paper,
     TextField,
     Typography,
