@@ -12,24 +12,75 @@ export interface JiraIssue {
     is_qa_approved?: boolean;
 }
 
+export interface ProjectSpace {
+    id: string;
+    key: string;
+    name: string;
+    style?: string;
+    simplified?: boolean;
+}
+
 export interface IssueDetail extends JiraIssue {
     description: string;
 }
 
 class IssueStore {
     issues: JiraIssue[] = [];
+    spaces: ProjectSpace[] = [];
+    selectedSpaceKeys: string[] = [];
     selectedIssueKeys: Set<string> = new Set();
     selectedIssue: IssueDetail | null = null;
     issueDetailsCache: Map<string, IssueDetail> = new Map();
     batchProcessingStatus: Map<string, 'pending' | 'processing' | 'completed' | 'failed'> = new Map();
     generatedPlans: Map<string, string> = new Map();
     loading: boolean = false;
+    spacesLoading: boolean = false;
     error: string | null = null;
     isGeneratingPlan: boolean = false;
     generationMessage: string | null = null;
 
     constructor() {
         makeAutoObservable(this);
+    }
+
+    async fetchSpaces() {
+        this.spacesLoading = true;
+        try {
+            const response = await jiraApi.fetchSpaces();
+            const apiSpaces = Array.isArray(response.data?.spaces) ? response.data.spaces : [];
+
+            runInAction(() => {
+                this.spaces = apiSpaces.map((space: any) => ({
+                    id: String(space.id ?? ''),
+                    key: String(space.key ?? ''),
+                    name: String(space.name ?? space.key ?? ''),
+                    style: space.style,
+                    simplified: space.simplified,
+                })).filter((space: ProjectSpace) => !!space.key);
+
+                const validKeys = new Set(this.spaces.map((space) => space.key));
+                const retained = this.selectedSpaceKeys.filter((key) => validKeys.has(key));
+
+                // Default to the first available space on initial load when nothing was previously selected.
+                this.selectedSpaceKeys = retained.length > 0
+                    ? retained
+                    : (this.spaces[0]?.key ? [this.spaces[0].key] : []);
+
+                this.spacesLoading = false;
+            });
+
+            return true;
+        } catch (err: any) {
+            console.error('Fetch spaces error:', err);
+            runInAction(() => {
+                this.spacesLoading = false;
+            });
+            return false;
+        }
+    }
+
+    setSelectedSpaces(spaceKeys: string[]) {
+        this.selectedSpaceKeys = Array.from(new Set(spaceKeys));
     }
 
     async fetchIssues(silent: boolean = false) {
@@ -39,7 +90,38 @@ class IssueStore {
         }
 
         try {
-            const response = await jiraApi.fetchIssues();
+            // If spaces are loaded and user cleared the selection, treat it as "show no issues".
+            if (this.spaces.length > 0 && this.selectedSpaceKeys.length === 0) {
+                runInAction(() => {
+                    this.issues = [];
+                    this.selectedIssue = null;
+                    this.selectedIssueKeys.clear();
+                    this.batchProcessingStatus.clear();
+                    this.generatedPlans.clear();
+                    this.issueDetailsCache.clear();
+                    this.error = null;
+                    if (!silent) this.loading = false;
+                });
+                return true;
+            }
+
+            if (this.selectedSpaceKeys.length === 0) {
+                runInAction(() => {
+                    this.issues = [];
+                    this.selectedIssue = null;
+                    this.selectedIssueKeys.clear();
+                    this.batchProcessingStatus.clear();
+                    this.generatedPlans.clear();
+                    this.issueDetailsCache.clear();
+                    this.error = null;
+                    if (!silent) this.loading = false;
+                });
+                return true;
+            }
+
+            const spacesToFetch = this.selectedSpaceKeys;
+
+            const response = await jiraApi.fetchIssues(spacesToFetch, 25);
             console.log('fetchIssues raw response:', JSON.stringify(response.data, null, 2));
 
             const nestedIssues = response.data?.issues?.issues;
@@ -420,6 +502,9 @@ class IssueStore {
     clearSelectedIssue() {
         this.selectedIssue = null;
         this.generationMessage = null;
+        this.selectedSpaceKeys = [];
+        this.spaces = [];
+        this.spacesLoading = false;
         this.selectedIssueKeys.clear();
         this.batchProcessingStatus.clear();
         this.generatedPlans.clear();

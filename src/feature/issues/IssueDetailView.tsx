@@ -19,7 +19,6 @@ import {
 } from '@mui/material';
 import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
@@ -31,6 +30,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 import AutoFixHighOutlinedIcon from '@mui/icons-material/AutoFixHighOutlined';
 import VerifiedOutlinedIcon from '@mui/icons-material/VerifiedOutlined';
+import PublishOutlinedIcon from '@mui/icons-material/PublishOutlined';
 import { issueStore } from '../../app/store/issueStore';
 import { testPlanApi } from '../../lib/api/testPlanApi';
 import { uploadFiles } from '../../lib/api/uploadApi';
@@ -295,7 +295,7 @@ const IssueDetailView: React.FC<IssueDetailViewProps> = observer(({ mode = 'test
                                 <Button
                                     variant="contained"
                                     size="small"
-                                    startIcon={issue!.is_qa_approved ? <VisibilityOutlinedIcon /> : <EditOutlinedIcon />}
+                                    startIcon={<VisibilityOutlinedIcon />}
                                     onClick={() => handleOpenTestPlan(issue!.test_case_filename || '', issue!.is_qa_approved || false)}
                                     sx={{
                                         textTransform: 'none', fontWeight: 700, borderRadius: '9px', fontSize: '0.82rem',
@@ -304,7 +304,7 @@ const IssueDetailView: React.FC<IssueDetailViewProps> = observer(({ mode = 'test
                                         '&:hover': { background: 'linear-gradient(135deg, #0A52C4 0%, #1468D8 55%, #2F84F0 100%)', boxShadow: '0 4px 12px rgba(24,119,242,0.4)' },
                                     }}
                                 >
-                                    {issue!.is_qa_approved ? BUTTONS.VIEW : BUTTONS.EDIT}
+                                    {BUTTONS.VIEW}
                                 </Button>
                             ) : isBatch && pendingCount > 0 ? (
                                 <Button
@@ -347,6 +347,7 @@ const IssueDetailView: React.FC<IssueDetailViewProps> = observer(({ mode = 'test
                                             variant="outlined"
                                             size="small"
                                             onClick={() => setPublishDropdownOpen(!publishDropdownOpen)}
+                                            startIcon={<PublishOutlinedIcon sx={{ fontSize: 16 }} />}
                                             endIcon={publishDropdownOpen ? <KeyboardArrowUpIcon sx={{ fontSize: 16 }} /> : <KeyboardArrowDownIcon sx={{ fontSize: 16 }} />}
                                             sx={{
                                                 textTransform: 'none', fontWeight: 700, fontSize: '0.82rem',

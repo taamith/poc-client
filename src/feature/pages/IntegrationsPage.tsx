@@ -144,7 +144,7 @@ const IntegrationsPage: React.FC = observer(() => {
         setConnecting(true);
         const timer = setInterval(async () => {
             if (popup.closed) { clearInterval(timer); setConnecting(false); return; }
-            const success = await issueStore.fetchIssues(true);
+            const success = await issueStore.fetchSpaces();
             if (success) {
                 clearInterval(timer); setConnecting(false);
                 integrationStore.setJiraConnected(true);

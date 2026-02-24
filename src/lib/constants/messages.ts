@@ -6,7 +6,7 @@
 
 // ─── Error Messages ──────────────────────────────────────────────────
 export const ERRORS = {
-    LOGIN_REQUIRED: 'Please log in to Jira',
+    LOGIN_REQUIRED: 'Please log in to your connected tool',
     CONNECTION_ERROR: 'Connection Error. Ensure the backend is accessible.',
     INVALID_RESPONSE: 'Invalid response format from server',
     FETCH_ISSUE_DETAILS: 'Failed to fetch issue details',
@@ -34,7 +34,7 @@ export const SUCCESS = {
 export const LOADING = {
     DEFAULT: 'Loading...',
     TEST_PLAN_CONTENT: 'Loading test plan content...',
-    WAITING_AUTH: 'Waiting for Jira Authentication...',
+    WAITING_AUTH: 'Waiting for tool authentication...',
     COMPLETE_LOGIN: 'Please complete the login in the popup window.',
     DISCONNECTING: 'Disconnecting...',
     PLEASE_WAIT_LOGOUT: 'Please wait while we log you out.',

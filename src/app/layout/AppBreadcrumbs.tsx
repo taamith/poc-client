@@ -4,7 +4,7 @@ import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import HomeIcon from '@mui/icons-material/Home';
 
 const routeLabels: Record<string, string> = {
-    '/home': 'Home',
+    '/home': 'Dashboard',
     '/test-plans': 'Test Plans',
     '/reports': 'Reports',
     '/settings': 'Settings',

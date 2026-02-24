@@ -1,7 +1,7 @@
 ﻿import React, { useState } from 'react';
 import { Typography, Button, Box, Stack, TextField, InputAdornment, IconButton } from '@mui/material';
 import { observer } from 'mobx-react-lite';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Visibility from '@mui/icons-material/Visibility';
@@ -13,7 +13,7 @@ import USERS from '../../lib/constants/users.json';
 
 const FEATURES = [
     { title: 'AI-Powered Test Plans', desc: 'Generate comprehensive test plans from user stories instantly.' },
-    { title: 'Jira Integration', desc: 'Seamlessly import issues directly from your Jira board.' },
+    { title: 'Tool Integrations', desc: 'Seamlessly import issues directly from your project management tools.' },
     { title: 'Smart Collaboration', desc: 'Publish and share test artifacts across your team.' },
 ];
 
@@ -218,13 +218,6 @@ const LoginView: React.FC = observer(() => {
                         Sign In
                     </Button>
 
-                    <Typography sx={{ mt: 3, fontSize: '0.85rem', color: '#6B778C', textAlign: 'center' }}>
-                        Don't have an account?{' '}
-                        <Box component={Link} to="/signup"
-                            sx={{ color: '#1877F2', fontWeight: 700, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
-                            Sign Up
-                        </Box>
-                    </Typography>
                 </Box>
             </Box>
         </Box>

@@ -39,14 +39,17 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
     const [loading, setLoading] = useState<boolean>(false);
     const [saving, setSaving] = useState<boolean>(false);
     const [isStructuredJson, setIsStructuredJson] = useState<boolean>(false);
+    const [isEditMode, setIsEditMode] = useState<boolean>(false);
 
     useEffect(() => {
         if (open && filename) {
+            setIsEditMode(false);
             fetchTestPlan();
         } else if (!open) {
             setContent('');
             setLoading(false);
             setIsStructuredJson(false);
+            setIsEditMode(false);
         }
     }, [open, filename]);
 
@@ -115,8 +118,11 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
 
     const handleClose = () => {
         setContent('');
+        setIsEditMode(false);
         onClose();
     };
+
+    const isReadOnly = isQaApproved || !isEditMode;
 
     return (
         <Dialog
@@ -177,12 +183,12 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
                         InputProps={{
-                            readOnly: isQaApproved,
+                            readOnly: isReadOnly,
                             sx: {
                                 fontFamily: '"Segoe UI", Roboto, sans-serif',
                                 fontSize: '14px',
                                 lineHeight: 1.7,
-                                backgroundColor: isQaApproved ? '#F4F5F7' : 'white',
+                                backgroundColor: isReadOnly ? '#F4F5F7' : 'white',
                                 alignItems: 'flex-start',
                                 '& .MuiInputBase-input': {
                                     padding: '16px',
@@ -213,7 +219,26 @@ const TestPlanEditorModal: React.FC<TestPlanEditorModalProps> = ({
                 >
                     {BUTTONS.CLOSE}
                 </Button>
-                {!isQaApproved && (
+                {!isQaApproved && !isEditMode && (
+                    <Button
+                        onClick={() => setIsEditMode(true)}
+                        variant="outlined"
+                        disabled={loading}
+                        sx={{
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            borderColor: '#1877F2',
+                            color: '#1877F2',
+                            '&:hover': {
+                                borderColor: '#0D65D9',
+                                bgcolor: 'rgba(24,119,242,0.04)',
+                            },
+                        }}
+                    >
+                        {BUTTONS.EDIT}
+                    </Button>
+                )}
+                {!isQaApproved && isEditMode && (
                     <Button
                         onClick={handleSave}
                         variant="contained"

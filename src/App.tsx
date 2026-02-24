@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Routes, Route, Navigate, useNavigate, Outlet } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 import { Toaster } from 'sonner';
-import DashboardIcon from '@mui/icons-material/Dashboard';
 import BarChartIcon from '@mui/icons-material/BarChart';
 
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
@@ -23,7 +22,9 @@ import LoginView from './feature/auth/LoginView.tsx';
 import SignupView from './feature/auth/SignupView.tsx';
 import IssueList from './feature/issues/IssueList.tsx';
 import IssueDetailView from './feature/issues/IssueDetailView.tsx';
+import SpacesFilterBar from './feature/issues/SpacesFilterBar.tsx';
 import PlaceholderPage from './feature/pages/PlaceholderPage.tsx';
+import DashboardPage from './feature/pages/DashboardPage.tsx';
 import UploadDocumentsPage from './feature/pages/UploadDocumentsPage.tsx';
 import IntegrationsPage from './feature/pages/IntegrationsPage.tsx';
 
@@ -65,9 +66,7 @@ const AuthenticatedLayout = observer(() => {
   );
 });
 
-const HomePage = () => (
-  <PlaceholderPage title="Home" subtitle="Your command center for test automation — insights, progress, and activity all in one place. Coming soon." Icon={DashboardIcon} />
-);
+const HomePage = () => <DashboardPage />;
 
 const RepositoryPage = () => <UploadDocumentsPage />;
 
@@ -88,7 +87,7 @@ const TestPlansPage = observer(() => {
             No board connected
           </Typography>
           <Typography variant="body2" sx={{ color: '#6B778C', mb: 3, lineHeight: 1.7 }}>
-            Connect your Jira board from the Integrations page to start importing user stories and generating test plans.
+            Connect your project management tool from the Integrations page to start importing user stories and generating test plans.
           </Typography>
           <Button
             variant="contained"
@@ -108,9 +107,12 @@ const TestPlansPage = observer(() => {
   }
 
   return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '400px 1fr' }, gap: 3, flex: 1, minHeight: 0 }}>
-      <IssueList />
-      <IssueDetailView mode="testplans" />
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, minHeight: 0 }}>
+      <SpacesFilterBar />
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '400px 1fr' }, gap: 3, flex: 1, minHeight: 0 }}>
+        <IssueList />
+        <IssueDetailView mode="testplans" />
+      </Box>
     </Box>
   );
 });
