@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Button, Paper, Stack, Typography } from '@mui/material';
+import { Button, Paper, Stack, Typography } from '@mui/material';
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
 
 const actions = [
