@@ -7,6 +7,7 @@ import BarChartRoundedIcon from '@mui/icons-material/BarChartRounded';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
 import HelpOutlineRoundedIcon from '@mui/icons-material/HelpOutlineRounded';
 import FolderRoundedIcon from '@mui/icons-material/FolderRounded';
+import PlayCircleRoundedIcon from '@mui/icons-material/PlayCircleRounded';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
@@ -24,6 +25,7 @@ const NAV_MAIN: NavItem[] = [
     { label: 'Home',       path: '/home',       icon: HomeRoundedIcon },
     { label: 'Test Plans', path: '/test-plans',  icon: AssignmentRoundedIcon },
     { label: 'Repository', path: '/repository',  icon: FolderRoundedIcon },
+    { label: 'Execution',  path: '/execution',   icon: PlayCircleRoundedIcon },
     { label: 'Reports',    path: '/reports',     icon: BarChartRoundedIcon },
 ];
 

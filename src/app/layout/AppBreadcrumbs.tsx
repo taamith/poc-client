@@ -6,6 +6,8 @@ import HomeIcon from '@mui/icons-material/Home';
 const routeLabels: Record<string, string> = {
     '/home': 'Dashboard',
     '/test-plans': 'Test Plans',
+    '/execution': 'Execution',
+    '/execution/run': 'Run Tests',
     '/reports': 'Reports',
     '/settings': 'Settings',
     '/help': 'Help & Support',

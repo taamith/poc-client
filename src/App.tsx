@@ -27,6 +27,8 @@ import PlaceholderPage from './feature/pages/PlaceholderPage.tsx';
 import DashboardPage from './feature/pages/DashboardPage.tsx';
 import UploadDocumentsPage from './feature/pages/UploadDocumentsPage.tsx';
 import IntegrationsPage from './feature/pages/IntegrationsPage.tsx';
+import ExecutionPage from './feature/execution/ExecutionPage.tsx';
+import TestRunPage from './feature/execution/TestRunPage.tsx';
 
 const queryClient = new QueryClient();
 
@@ -130,6 +132,8 @@ const App = observer(() => {
             <Route path="/home" element={<HomePage />} />
             <Route path="/test-plans" element={<TestPlansPage />} />
             <Route path="/repository" element={<RepositoryPage />} />
+            <Route path="/execution" element={<ExecutionPage />} />
+            <Route path="/execution/run" element={<TestRunPage />} />
             <Route path="/reports" element={<PlaceholderPage title="Reports" subtitle="Analytics and insights on test coverage, generation metrics, and team productivity. Coming soon." Icon={BarChartIcon} />} />
             <Route path="/settings" element={<Navigate to="/settings/general" replace />} />
             <Route path="/settings/general" element={<PlaceholderPage title="General Settings" subtitle="Workspace preferences, notification settings, and team configuration. Coming soon." Icon={HelpOutlineIcon} />} />
