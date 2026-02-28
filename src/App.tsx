@@ -1,123 +1,14 @@
-﻿import { useEffect } from 'react';
-import { ThemeProvider, CssBaseline, Box, CircularProgress, Typography, Button } from '@mui/material';
+import { Box, Typography } from '@mui/material';
+import { ThemeProvider, CssBaseline } from '@mui/material';
 import { BRANDING } from './lib/constants/messages';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Routes, Route, Navigate, useNavigate, Outlet } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 import { Toaster } from 'sonner';
-import BarChartIcon from '@mui/icons-material/BarChart';
-
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import ExtensionOutlinedIcon from '@mui/icons-material/ExtensionOutlined';
-
 
 import { theme } from './app/theme/theme';
-import { sessionStore } from './app/store/sessionStore';
-import { integrationStore } from './app/store/integrationStore';
-
-import Header from './app/layout/Header.tsx';
-import Sidebar from './app/layout/Sidebar.tsx';
-import AppBreadcrumbs from './app/layout/AppBreadcrumbs.tsx';
-import LoginView from './feature/auth/LoginView.tsx';
-import SignupView from './feature/auth/SignupView.tsx';
-import IssueList from './feature/issues/IssueList.tsx';
-import IssueDetailView from './feature/issues/IssueDetailView.tsx';
-import SpacesFilterBar from './feature/issues/SpacesFilterBar.tsx';
-import PlaceholderPage from './feature/pages/PlaceholderPage.tsx';
-import DashboardPage from './feature/pages/DashboardPage.tsx';
-import UploadDocumentsPage from './feature/pages/UploadDocumentsPage.tsx';
-import IntegrationsPage from './feature/pages/IntegrationsPage.tsx';
-import ExecutionPage from './feature/execution/ExecutionPage.tsx';
-import TestRunPage from './feature/execution/TestRunPage.tsx';
+import AppRoutes from './app/routes';
 
 const queryClient = new QueryClient();
-
-const AuthenticatedLayout = observer(() => {
-  const navigate = useNavigate();
-  useEffect(() => {
-    if (sessionStore.authChecked && !sessionStore.isAuthenticated) {
-      navigate('/login', { replace: true });
-    }
-  }, [sessionStore.authChecked, sessionStore.isAuthenticated, navigate]);
-
-  if (!sessionStore.authChecked) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (!sessionStore.isAuthenticated) return null;
-
-  return (
-    <Box sx={{ display: 'flex', height: '100vh', bgcolor: 'background.default' }}>
-      {/* Sidebar — full height, logo at top aligned with header */}
-      <Sidebar />
-      {/* Right column — header + content */}
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
-        <Header />
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
-          <AppBreadcrumbs />
-          <Box sx={{ flex: 1, overflow: 'auto', px: { xs: 2, md: 4 }, pt: 1.5, pb: 8, display: 'flex', flexDirection: 'column' }}>
-            <Outlet />
-          </Box>
-        </Box>
-      </Box>
-    </Box>
-  );
-});
-
-const HomePage = () => <DashboardPage />;
-
-const RepositoryPage = () => <UploadDocumentsPage />;
-
-const TestPlansPage = observer(() => {
-  const navigate = useNavigate();
-
-  if (!integrationStore.jiraConnected) {
-    return (
-      <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Box sx={{ textAlign: 'center', maxWidth: 420, px: 3 }}>
-          <Box sx={{
-            width: 72, height: 72, borderRadius: '16px', bgcolor: '#E7F0FD',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2.5,
-          }}>
-            <ExtensionOutlinedIcon sx={{ fontSize: 36, color: '#1877F2' }} />
-          </Box>
-          <Typography variant="h6" sx={{ fontWeight: 700, color: '#172B4D', mb: 1 }}>
-            No board connected
-          </Typography>
-          <Typography variant="body2" sx={{ color: '#6B778C', mb: 3, lineHeight: 1.7 }}>
-            Connect your project management tool from the Integrations page to start importing user stories and generating test plans.
-          </Typography>
-          <Button
-            variant="contained"
-            onClick={() => navigate('/settings/integrations')}
-            sx={{
-              textTransform: 'none', fontWeight: 600, borderRadius: '8px',
-              background: 'linear-gradient(135deg, #0D65D9 0%, #1877F2 55%, #3D90F5 100%)',
-              boxShadow: 'none',
-              '&:hover': { background: 'linear-gradient(135deg, #0A52C4 0%, #1468D8 55%, #2F84F0 100%)' },
-            }}
-          >
-            Go to Integrations
-          </Button>
-        </Box>
-      </Box>
-    );
-  }
-
-  return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, minHeight: 0 }}>
-      <SpacesFilterBar />
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '400px 1fr' }, gap: 3, flex: 1, minHeight: 0 }}>
-        <IssueList />
-        <IssueDetailView mode="testplans" />
-      </Box>
-    </Box>
-  );
-});
 
 const App = observer(() => {
   return (
@@ -125,24 +16,10 @@ const App = observer(() => {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <Toaster position="top-right" richColors />
-        <Routes>
-          <Route path="/login" element={<LoginView />} />
-          <Route path="/signup" element={<SignupView />} />
-          <Route element={<AuthenticatedLayout />}>
-            <Route path="/home" element={<HomePage />} />
-            <Route path="/test-plans" element={<TestPlansPage />} />
-            <Route path="/repository" element={<RepositoryPage />} />
-            <Route path="/execution" element={<ExecutionPage />} />
-            <Route path="/execution/run" element={<TestRunPage />} />
-            <Route path="/reports" element={<PlaceholderPage title="Reports" subtitle="Analytics and insights on test coverage, generation metrics, and team productivity. Coming soon." Icon={BarChartIcon} />} />
-            <Route path="/settings" element={<Navigate to="/settings/general" replace />} />
-            <Route path="/settings/general" element={<PlaceholderPage title="General Settings" subtitle="Workspace preferences, notification settings, and team configuration. Coming soon." Icon={HelpOutlineIcon} />} />
-            <Route path="/settings/integrations" element={<IntegrationsPage />} />
-            <Route path="/integrations" element={<Navigate to="/settings/integrations" replace />} />
-            <Route path="/help" element={<PlaceholderPage title="Help & Support" subtitle="Documentation, FAQs, and support resources to help you get the most out of AutoSprint AI." Icon={HelpOutlineIcon} />} />
-          </Route>
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
+
+        <AppRoutes />
+
+        {/* Footer */}
         <Box
           component="footer"
           sx={{
@@ -171,8 +48,8 @@ const App = observer(() => {
           <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 0.5 }}>
             {[
               { label: BRANDING.PRIVACY, href: '#' },
-              { label: BRANDING.TERMS, href: '#' },
-              { label: 'Help', href: '#' },
+              { label: BRANDING.TERMS,   href: '#' },
+              { label: 'Help',           href: '#' },
             ].map((link, i, arr) => (
               <Box key={link.label} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                 <Typography

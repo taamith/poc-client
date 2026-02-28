@@ -16,7 +16,7 @@ import VisibilityOff          from '@mui/icons-material/VisibilityOff';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const BASE            = 'http://13.221.139.39/api';
+const BASE            = '/exec-api';
 const STATUS_POLL_MS  = 2000; // 2 seconds
 
 // ─── Status enum & labels ─────────────────────────────────────────────────────
@@ -384,16 +384,6 @@ const ExecutionPage: React.FC = () => {
                         </Button>
                     )}
 
-                    {/* Connecting… button (disabled, shows spinner) */}
-                    {isPolling && (
-                        <Button
-                            fullWidth variant="contained" size="large" disabled
-                            startIcon={<CircularProgress size={16} sx={{ color: 'inherit' }} />}
-                            sx={{ py: 1.3, borderRadius: '10px', fontWeight: 700, fontSize: '0.92rem', textTransform: 'none' }}
-                        >
-                            Connecting…
-                        </Button>
-                    )}
 
                 </Stack>
             </Paper>
